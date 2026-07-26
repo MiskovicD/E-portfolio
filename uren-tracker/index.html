@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#6366f1">
+<title>Uren & Verdiensten</title>
+
+<!-- App-icoon (klok) -->
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Uren">
+<style>
+  :root{
+    --bg:#0f172a;
+    --bg2:#1e293b;
+    --card:#1e293b;
+    --card2:#273549;
+    --line:#334155;
+    --text:#e2e8f0;
+    --muted:#94a3b8;
+    --accent:#6366f1;
+    --accent2:#818cf8;
+    --dhl:#f5b301;
+    --dhl-bg:rgba(245,179,1,.14);
+    --dragon:#2dd4bf;
+    --dragon-bg:rgba(45,212,191,.14);
+    --green:#34d399;
+    --red:#f87171;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    line-height:1.5;
+    padding-bottom:88px;
+    -webkit-font-smoothing:antialiased;
+  }
+  header{
+    padding:calc(env(safe-area-inset-top) + 18px) 20px 16px;
+    background:linear-gradient(160deg,#312e81,#1e293b 70%);
+    border-bottom:1px solid var(--line);
+  }
+  header h1{margin:0;font-size:20px;font-weight:700;letter-spacing:-.3px}
+  header p{margin:4px 0 0;color:var(--muted);font-size:13px}
+
+  main{max-width:640px;margin:0 auto;padding:18px 16px}
+  .view{display:none}
+  .view.active{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px;
+    margin-bottom:16px;
+  }
+  .card h2{margin:0 0 4px;font-size:16px;font-weight:650}
+  .card .sub{color:var(--muted);font-size:13px;margin:0 0 14px}
+
+  label{display:block;font-size:13px;color:var(--muted);margin:0 0 6px;font-weight:500}
+  input[type=date],input[type=number],input[type=text],input[type=email],input[type=password],select{
+    width:100%;padding:13px 14px;border-radius:12px;border:1px solid var(--line);
+    background:var(--bg2);color:var(--text);font-size:16px;font-family:inherit;
+  }
+  select{-webkit-appearance:none;appearance:none;text-align:center;text-align-last:center}
+  input:focus,select:focus{outline:none;border-color:var(--accent2);box-shadow:0 0 0 3px rgba(129,140,248,.2)}
+  .timepick{display:flex;align-items:center;gap:8px}
+  .timepick select{flex:1;padding:13px 8px}
+  .timepick .colon{color:var(--muted);font-weight:700;font-size:18px}
+
+  .switch{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:11px 14px;margin-bottom:14px}
+  .switch .lbl2{font-size:14px;font-weight:600}
+  .switch .lbl2 small{display:block;color:var(--muted);font-weight:400;font-size:12px;margin-top:1px}
+  .toggle{position:relative;width:48px;height:28px;flex-shrink:0}
+  .toggle input{opacity:0;width:0;height:0;position:absolute}
+  .toggle .track{position:absolute;inset:0;background:var(--line);border-radius:999px;transition:.2s;cursor:pointer}
+  .toggle .track::before{content:"";position:absolute;width:22px;height:22px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+  .toggle input:checked + .track{background:var(--dragon)}
+  .toggle input:checked + .track::before{transform:translateX(20px)}
+
+  .inforow{display:flex;justify-content:space-between;font-size:14px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .inforow:last-child{border-bottom:none}
+  .inforow span:last-child{font-weight:700}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .field{margin-bottom:14px}
+
+  .seg{display:flex;gap:8px;margin-bottom:16px;background:var(--bg2);padding:5px;border-radius:14px}
+  .seg button{
+    flex:1;border:none;background:transparent;color:var(--muted);
+    padding:10px;border-radius:10px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:6px;transition:.15s;
+  }
+  .seg button.on{background:var(--card2);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.3)}
+  .seg .dot{width:9px;height:9px;border-radius:50%}
+  .dot.dhl{background:var(--dhl)}.dot.dragon{background:var(--dragon)}
+
+  .btn{
+    width:100%;padding:15px;border:none;border-radius:14px;font-size:16px;font-weight:650;
+    background:var(--accent);color:#fff;cursor:pointer;font-family:inherit;transition:.15s;
+  }
+  .btn:active{transform:scale(.98)}
+  .btn.ghost{background:var(--card2);color:var(--text);border:1px solid var(--line)}
+  .btn.sm{padding:9px 14px;font-size:14px;width:auto}
+
+  .est{background:var(--bg2);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:14px;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+  .est b{color:var(--text);font-size:16px}
+
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;text-transform:uppercase;letter-spacing:.4px}
+  .badge.dhl{background:var(--dhl-bg);color:var(--dhl)}
+  .badge.dragon{background:var(--dragon-bg);color:var(--dragon)}
+
+  .entry{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+  .entry:first-child{border-top:none}
+  .entry .date{font-size:13px;color:var(--muted);width:70px;flex-shrink:0}
+  .entry .desc{flex:1;font-size:14px}
+  .entry .amt{font-weight:650;font-size:14px}
+  .entry .x{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:0 4px;line-height:1}
+  .entry .edit{background:none;border:none;font-size:16px;cursor:pointer;padding:0 4px;line-height:1;opacity:.8}
+
+  .modal{position:fixed;inset:0;background:var(--bg);z-index:60;display:none;flex-direction:column}
+  .modal.show{display:flex}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;padding:calc(env(safe-area-inset-top) + 16px) 18px 14px;border-bottom:1px solid var(--line);background:var(--bg2)}
+  .modal-head h2{margin:0;font-size:17px;font-weight:650}
+  .modal-head .close{background:none;border:none;color:var(--muted);font-size:28px;cursor:pointer;line-height:1;padding:0 4px}
+  .modal-body{flex:1;overflow-y:auto;padding:6px 16px calc(env(safe-area-inset-bottom) + 24px)}
+  .modal-body .entry{padding:14px 0}
+
+  .auth{position:fixed;inset:0;z-index:100;background:linear-gradient(170deg,#312e81,#0f172a 60%);display:none;flex-direction:column;justify-content:center;padding:24px;overflow-y:auto}
+  .auth.show{display:flex}
+  .auth-box{width:100%;max-width:380px;margin:0 auto}
+  .auth h1{font-size:26px;font-weight:800;letter-spacing:-.4px;margin:0 0 4px}
+  .auth .tag{color:var(--muted);font-size:14px;margin:0 0 24px}
+  .auth .field{margin-bottom:14px}
+  .auth .aerr{font-size:13px;color:var(--red);min-height:18px;margin:2px 0 10px;line-height:1.4}
+  .auth .aerr.ok{color:var(--green)}
+  .auth .swap{text-align:center;margin-top:16px;font-size:14px;color:var(--muted)}
+  .auth .swap button{background:none;border:none;color:var(--accent2);font-weight:650;font-family:inherit;font-size:14px;cursor:pointer;padding:0}
+  .who{font-size:12px;color:var(--muted);margin-top:8px;word-break:break-all}
+
+  .weekcard{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:12px;overflow:hidden}
+  .weekhead{display:flex;justify-content:space-between;align-items:center;padding:15px 16px;cursor:pointer}
+  .weekhead .wk{font-weight:700;font-size:15px}
+  .weekhead .range{font-size:12px;color:var(--muted);margin-top:2px}
+  .weekhead .total{text-align:right}
+  .weekhead .total .eur{font-weight:700;font-size:17px}
+  .weekhead .total .incl{font-size:11px;color:var(--muted);margin-top:1px}
+  .weekhead .total .stat{font-size:11px;font-weight:700;margin-top:6px;cursor:pointer;font-family:inherit;padding:5px 11px;border-radius:999px;border:1px solid transparent;display:inline-block;line-height:1.2}
+  .stat.paid{color:var(--green);background:rgba(52,211,153,.12);border-color:rgba(52,211,153,.35)}
+  .stat.pending{color:var(--dhl);background:rgba(245,179,1,.10);border-color:rgba(245,179,1,.32)}
+  .weekbody{padding:0 16px 14px;border-top:1px solid var(--line);display:none}
+  .weekbody.open{display:block}
+  .brk{display:flex;justify-content:space-between;font-size:13px;padding:9px 0;border-bottom:1px solid var(--line);color:var(--muted)}
+  .brk:last-child{border-bottom:none}
+  .brk span:last-child{color:var(--text);font-weight:600}
+  .dragon-row{cursor:pointer;user-select:none}
+  .chev{display:inline-block;transition:.2s;color:var(--muted);font-size:10px;margin-left:2px}
+  .dragon-row.open .chev{transform:rotate(90deg)}
+  .dragon-detail{display:none;padding:2px 0 8px}
+  .dragon-detail.open{display:block}
+  .dday{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;font-size:12.5px;color:var(--muted);padding:6px 0;border-bottom:1px dashed var(--line)}
+  .dday:last-child{border-bottom:none}
+  .dday .rng{color:var(--text)}
+  .dday .hrs{color:var(--text);font-weight:600;text-align:right;min-width:44px}
+  .dday .zo{display:inline-block;font-size:9px;font-weight:700;color:var(--dragon);background:var(--dragon-bg);padding:1px 5px;border-radius:6px;margin-left:5px;text-transform:uppercase;letter-spacing:.4px}
+  .payout{font-size:12px;color:var(--muted);margin-top:10px;display:flex;align-items:center;gap:6px}
+
+  .hero{background:linear-gradient(150deg,var(--accent),#8b5cf6);border-radius:var(--radius);padding:18px;margin-bottom:16px;color:#fff}
+  .hero .lbl{font-size:12px;opacity:.85;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+  .hero .big{font-size:30px;font-weight:800;letter-spacing:-.5px;margin:4px 0 0}
+  .hero .incl-hero{font-size:13px;opacity:.85;margin:2px 0 6px}
+  .hero .meta{font-size:13px;opacity:.9}
+
+  .empty{text-align:center;color:var(--muted);padding:34px 10px;font-size:14px}
+  .toast{position:fixed;left:50%;bottom:104px;transform:translateX(-50%) translateY(20px);background:var(--green);color:#04231a;font-weight:650;padding:11px 20px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:.3s;z-index:50}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  nav{
+    position:fixed;bottom:0;left:0;right:0;display:flex;
+    background:rgba(15,23,42,.92);backdrop-filter:blur(12px);border-top:1px solid var(--line);
+    padding:8px 0 calc(env(safe-area-inset-bottom) + 8px);z-index:40;
+  }
+  nav button{flex:1;background:none;border:none;color:var(--muted);font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+  nav button svg{width:23px;height:23px}
+  nav button.on{color:var(--accent2)}
+
+  .hint{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5}
+  .inline-eur{position:relative}
+  .inline-eur::before{content:"€";position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:16px;pointer-events:none}
+  .inline-eur input{padding-left:28px}
+</style>
+</head>
+<body>
+<!-- ============ INLOGGEN / REGISTREREN ============ -->
+<div class="auth show" id="authScreen">
+  <div class="auth-box">
+    <h1>Uren &amp; Verdiensten</h1>
+    <p class="tag" id="authTag">Log in om je uren te zien</p>
+    <div class="field">
+      <label for="authEmail">E-mailadres</label>
+      <input type="email" id="authEmail" autocomplete="email" placeholder="jij@voorbeeld.nl">
+    </div>
+    <div class="field">
+      <label for="authPass">Wachtwoord</label>
+      <input type="password" id="authPass" autocomplete="current-password" placeholder="••••••••">
+    </div>
+    <div class="aerr" id="authErr"></div>
+    <button class="btn" id="authBtn">Inloggen</button>
+    <div class="swap" id="authSwap">Nog geen account? <button id="swapBtn">Account aanmaken</button></div>
+  </div>
+</div>
+
+<header>
+  <h1>Uren &amp; Verdiensten</h1>
+  <p id="headerSub">DHL &amp; Dragonfly · alles op één plek</p>
+</header>
+
+<main>
+  <!-- ============ INVOER ============ -->
+  <section class="view active" id="view-invoer">
+    <div class="card">
+      <h2>Dag loggen</h2>
+      <p class="sub">Kies de dag en het type werk.</p>
+
+      <div class="field">
+        <label for="inDate">Datum</label>
+        <input type="date" id="inDate">
+      </div>
+
+      <div class="seg" id="typeSeg">
+        <button class="on" data-type="dhl"><span class="dot dhl"></span> DHL</button>
+        <button data-type="dragon"><span class="dot dragon"></span> Dragonfly</button>
+      </div>
+
+      <!-- DHL fields -->
+      <div id="fieldsDhl">
+        <div class="row">
+          <div class="field">
+            <label for="inStops">Stops</label>
+            <input type="number" id="inStops" inputmode="numeric" min="0" step="1" placeholder="0">
+          </div>
+          <div class="field">
+            <label for="inPkg">Pakketten</label>
+            <input type="number" id="inPkg" inputmode="numeric" min="0" step="1" placeholder="0">
+          </div>
+        </div>
+      </div>
+
+      <!-- Dragonfly fields -->
+      <div id="fieldsDragon" style="display:none">
+        <div class="field">
+          <label>Begintijd</label>
+          <div class="timepick">
+            <select id="startH" aria-label="Beginuur"></select>
+            <span class="colon">:</span>
+            <select id="startM" aria-label="Beginminuten"></select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Eindtijd</label>
+          <div class="timepick">
+            <select id="endH" aria-label="Einduur"></select>
+            <span class="colon">:</span>
+            <select id="endM" aria-label="Eindminuten"></select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="inBreak">Pauze in minuten (optioneel)</label>
+          <input type="number" id="inBreak" inputmode="numeric" min="0" step="5" placeholder="0">
+        </div>
+        <div class="switch">
+          <div class="lbl2">Zondagtarief</div>
+          <label class="toggle"><input type="checkbox" id="inSunday"><span class="track"></span></label>
+        </div>
+        <div class="est">
+          <span>Gewerkte tijd</span>
+          <b id="calcHours">0 uur</b>
+        </div>
+      </div>
+
+      <div class="est">
+        <span>Verdiensten deze dag <small style="opacity:.7">(ex btw)</small></span>
+        <b id="estDay">€ 0,00</b>
+      </div>
+
+      <button class="btn" id="saveBtn">Opslaan</button>
+    </div>
+
+    <div class="card">
+      <h2>Recent gelogd</h2>
+      <p class="sub">Laatste 12 invoeren. Tik op ✕ om te verwijderen.</p>
+      <div id="recentList"><div class="empty">Nog niks gelogd.</div></div>
+      <button class="btn ghost sm" id="showAllBtn" style="width:100%;margin-top:12px">Zie alle logs</button>
+    </div>
+  </section>
+
+  <!-- ============ WEEKOVERZICHT ============ -->
+  <section class="view" id="view-week">
+    <div class="hero">
+      <div class="lbl">Eerstvolgende uitbetaling · ex btw</div>
+      <div class="big" id="nextPayAmt">€ 0,00</div>
+      <div class="incl-hero" id="nextPayIncl"></div>
+      <div class="meta" id="nextPayMeta">—</div>
+    </div>
+    <div id="weekList"><div class="empty">Nog geen weken om te tonen.</div></div>
+  </section>
+
+  <!-- ============ INSTELLINGEN ============ -->
+  <section class="view" id="view-settings">
+    <div class="card">
+      <h2>Tarieven</h2>
+      <p class="sub">Vaste tarieven, ex btw — automatisch verrekend.</p>
+      <div class="inforow"><span>DHL — per stop</span><span>€ 0,62</span></div>
+      <div class="inforow"><span>DHL — per pakket</span><span>€ 0,15</span></div>
+      <div class="inforow"><span>Dragonfly — per uur</span><span>€ 23,50</span></div>
+      <div class="inforow"><span>Dragonfly — zondag</span><span>€ 35,00</span></div>
+    </div>
+
+    <div class="card">
+      <h2>Uitbetaling</h2>
+      <p class="sub">Je wordt 5 weken later uitbetaald, op vrijdag.</p>
+      <div class="field">
+        <label for="payDelay">Aantal weken vertraging</label>
+        <input type="number" id="payDelay" inputmode="numeric" min="0" step="1">
+      </div>
+      <button class="btn ghost" id="savePay">Opslaan</button>
+    </div>
+
+    <div class="card">
+      <h2>Account</h2>
+      <p class="sub">Je gegevens staan veilig in de database — alleen jij ziet ze.</p>
+      <div class="who" id="whoami" style="margin:0 0 14px">—</div>
+      <button class="btn ghost" id="logoutBtn">Uitloggen</button>
+    </div>
+
+    <div class="card">
+      <h2>Back-up &amp; import</h2>
+      <p class="sub">Exporteer als back-up, of importeer een <b>.json</b>-back-up of een <b>.md/.txt</b>-urenlijst.</p>
+      <button class="btn ghost" id="exportBtn" style="margin-bottom:10px">Exporteren (back-up)</button>
+      <button class="btn ghost" id="importBtn">Importeren (.json / .md / .txt)</button>
+      <input type="file" id="importFile" accept=".json,.md,.markdown,.txt,application/json,text/markdown,text/plain" style="display:none">
+    </div>
+  </section>
+</main>
+
+<div class="modal" id="allModal">
+  <div class="modal-head">
+    <h2>Alle logs</h2>
+    <button class="close" id="closeAll" aria-label="Sluiten">×</button>
+  </div>
+  <div class="modal-body">
+    <p class="sub" style="margin:6px 0 4px">Tik op ✏️ om aan te passen of ✕ om te verwijderen.</p>
+    <div id="allList"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<nav>
+  <button data-view="invoer" class="on" aria-label="Invoer">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+    Invoer
+  </button>
+  <button data-view="week" aria-label="Weekoverzicht">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    Weken
+  </button>
+  <button data-view="settings" aria-label="Instellingen">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Instellingen
+  </button>
+</nav>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+// ---------- State ----------
+// Vaste tarieven (niet aanpasbaar) — alle bedragen zijn EX btw
+const RATE = { stop:0.62, pkg:0.15, hour:23.50, sundayHour:35 };
+const BTW = 0.21; // 21% btw
+const incl = n => (n||0)*(1+BTW);
+
+let settings = { payDelay:5 };
+let entries  = {}; // { "2026-07-24": {stops,packages,hours,start,end,break,sunday} }
+let paid     = {}; // { "2026-W30": true } — handmatig op ontvangen gezet
+
+function load(k,d){ try{ const v=JSON.parse(localStorage.getItem(k)); return v??d; }catch(e){ return d; } }
+
+// ================= Supabase-verbinding =================
+// ▼▼▼ VUL HIER JE EIGEN PROJECTGEGEVENS IN (Supabase → Project Settings → API) ▼▼▼
+const SB_URL  = "https://zxlythycfgpqwpquuswg.supabase.co";   // Project URL
+const SB_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4bHl0aHljZmdwcXdwcXV1c3dnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5NTIyOTcsImV4cCI6MjEwMDUyODI5N30.tDSW5jnnB--mltLEpEsmtVgiN6ALixsV3XWxYkJZ014";                       // anon public key
+// ▲▲▲ ------------------------------------------------------------------- ▲▲▲
+const SESSION_KEY = "uren.session";
+let session = load(SESSION_KEY, null);
+
+function storeSession(s){ session=s; try{ localStorage.setItem(SESSION_KEY, JSON.stringify(s)); }catch(e){} }
+function clearSession(){ session=null; try{ localStorage.removeItem(SESSION_KEY); }catch(e){} }
+const sbConfigured = () => !SB_URL.includes("JOUW-PROJECT") && !SB_ANON.includes("JOUW-ANON");
+
+async function authRequest(grant, payload){
+  const res=await fetch(`${SB_URL}/auth/v1/token?grant_type=${grant}`,{
+    method:"POST", headers:{apikey:SB_ANON,"Content-Type":"application/json"}, body:JSON.stringify(payload)
+  });
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(data.error_description||data.msg||data.error||"Inloggen mislukt");
+  return data;
+}
+function setSessionFromToken(d){
+  storeSession({
+    access_token:d.access_token, refresh_token:d.refresh_token,
+    user_id:(d.user&&d.user.id)||(session&&session.user_id)||null,
+    email:(d.user&&d.user.email)||(session&&session.email)||"",
+    expires_at:Date.now()+((d.expires_in||3600)*1000)
+  });
+}
+async function signIn(email,password){ setSessionFromToken(await authRequest("password",{email,password})); }
+async function signUp(email,password){
+  const res=await fetch(`${SB_URL}/auth/v1/signup`,{
+    method:"POST", headers:{apikey:SB_ANON,"Content-Type":"application/json"}, body:JSON.stringify({email,password})
+  });
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(data.error_description||data.msg||data.error||"Registreren mislukt");
+  if(data.access_token){ setSessionFromToken(data); return true; }
+  return false; // e-mailbevestiging nodig
+}
+async function refreshSession(){
+  if(!session||!session.refresh_token) throw new Error("Niet ingelogd");
+  setSessionFromToken(await authRequest("refresh_token",{refresh_token:session.refresh_token}));
+}
+async function ensureToken(){
+  if(!session) throw new Error("Niet ingelogd");
+  if(Date.now() > session.expires_at-60000) await refreshSession();
+}
+async function api(method, path, body, prefer){
+  await ensureToken();
+  const doFetch=()=>{
+    const headers={ apikey:SB_ANON, Authorization:"Bearer "+session.access_token };
+    if(body!==undefined) headers["Content-Type"]="application/json";
+    if(prefer) headers["Prefer"]=prefer; else if(method==="POST") headers["Prefer"]="return=representation";
+    return fetch(SB_URL+"/rest/v1"+path,{ method, headers, body:body!==undefined?JSON.stringify(body):undefined });
+  };
+  let res=await doFetch();
+  if(res.status===401){ await refreshSession(); res=await doFetch(); }
+  if(!res.ok){ const t=await res.text().catch(()=>""); throw new Error("Serverfout ("+res.status+")"+(t?": "+t.slice(0,120):"")); }
+  if(res.status===204) return null;
+  const txt=await res.text(); return txt?JSON.parse(txt):null;
+}
+
+// ================= Data laden & opslaan =================
+async function pullAll(){
+  const [rows, pw, us] = await Promise.all([
+    api("GET","/entries?select=*"),
+    api("GET","/paid_weeks?select=week_key"),
+    api("GET","/user_settings?select=*&limit=1")
+  ]);
+  entries={};
+  (rows||[]).forEach(r=>{
+    entries[r.date]={ stops:r.stops||0, packages:r.packages||0, hours:Number(r.hours)||0,
+      start:r.start_time||"", end:r.end_time||"", break:r.break_min||0, sunday:!!r.sunday };
+  });
+  paid={}; (pw||[]).forEach(r=>{ paid[r.week_key]=true; });
+  settings={ payDelay:(us&&us[0]&&us[0].pay_delay!=null)?us[0].pay_delay:5 };
+}
+async function pushEntry(date){
+  const e=entries[date];
+  if(!e || (!e.stops && !e.packages && !e.hours)){
+    delete entries[date];
+    await api("DELETE","/entries?date=eq."+date);
+    return;
+  }
+  await api("POST","/entries?on_conflict=user_id,date",{
+    user_id:session.user_id, date, stops:e.stops||0, packages:e.packages||0, hours:e.hours||0,
+    start_time:e.start||"", end_time:e.end||"", break_min:e.break||0, sunday:!!e.sunday,
+    updated_at:new Date().toISOString()
+  }, "resolution=merge-duplicates,return=minimal");
+}
+async function setPaidRemote(k,on){
+  if(on) await api("POST","/paid_weeks?on_conflict=user_id,week_key",{user_id:session.user_id, week_key:k},"resolution=merge-duplicates,return=minimal");
+  else   await api("DELETE","/paid_weeks?week_key=eq."+encodeURIComponent(k));
+}
+async function savePayDelayRemote(){
+  await api("POST","/user_settings?on_conflict=user_id",{user_id:session.user_id, pay_delay:settings.payDelay, updated_at:new Date().toISOString()},"resolution=merge-duplicates,return=minimal");
+}
+async function persist(fn, okMsg){
+  try{ await fn(); if(okMsg) toast(okMsg); }
+  catch(e){ console.error(e); toast("Opslaan mislukt — check je internet"); }
+}
+
+// ---------- Helpers ----------
+const eur = n => new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(n||0);
+const num = v => { const n=parseFloat(String(v).replace(',','.')); return isNaN(n)?0:n; };
+function todayISO(){ const d=new Date(); return isoDate(d); }
+function isoDate(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function parseISO(s){ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+
+// ISO week number + year
+function isoWeek(date){
+  const d = new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate()));
+  const day = (d.getUTCDay()+6)%7;
+  d.setUTCDate(d.getUTCDate()-day+3);
+  const firstThu = new Date(Date.UTC(d.getUTCFullYear(),0,4));
+  const fday=(firstThu.getUTCDay()+6)%7;
+  firstThu.setUTCDate(firstThu.getUTCDate()-fday+3);
+  const week = 1+Math.round((d-firstThu)/(7*864e5));
+  return { week, year:d.getUTCFullYear() };
+}
+function mondayOf(date){ const d=new Date(date); const day=(d.getDay()+6)%7; d.setDate(d.getDate()-day); d.setHours(0,0,0,0); return d; }
+function weekKey(date){ const {week,year}=isoWeek(date); return year+'-W'+String(week).padStart(2,'0'); }
+// payout = Friday of work week + delay weeks
+function payoutDate(mon){ const p=new Date(mon); p.setDate(p.getDate()+4+settings.payDelay*7); return p; }
+const fmtDay = d => d.toLocaleDateString('nl-NL',{day:'numeric',month:'short'});
+const fmtFull = d => d.toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long'});
+
+// earnings for one entry
+function earnDhl(e){ return (e.stops||0)*RATE.stop + (e.packages||0)*RATE.pkg; }
+function earnDragon(e){ return (e.hours||0)*(e.sunday?RATE.sundayHour:RATE.hour); }
+function earnTotal(e){ return earnDhl(e)+earnDragon(e); }
+
+// ---------- Navigation ----------
+$$('nav button').forEach(b=>b.onclick=()=>{
+  $$('nav button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  $$('.view').forEach(v=>v.classList.remove('active'));
+  $('#view-'+b.dataset.view).classList.add('active');
+  if(b.dataset.view==='week') renderWeeks();
+});
+
+// ---------- Invoer ----------
+let curType='dhl';
+$('#inDate').value = todayISO();
+$$('#typeSeg button').forEach(b=>b.onclick=()=>{
+  $$('#typeSeg button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); curType=b.dataset.type;
+  $('#fieldsDhl').style.display   = curType==='dhl'?'block':'none';
+  $('#fieldsDragon').style.display= curType==='dragon'?'block':'none';
+  loadForm();
+});
+['inStops','inPkg','inBreak'].forEach(id=>$('#'+id).addEventListener('input',refreshEstimate));
+['startH','startM','endH','endM','inSunday'].forEach(id=>$('#'+id).addEventListener('change',refreshEstimate));
+$('#inDate').addEventListener('change',loadForm);
+const isSunday = dstr => parseISO(dstr).getDay()===0;
+
+// build the hour/minute dropdowns (minutes only in 15-min steps)
+const pad2 = n => String(n).padStart(2,'0');
+function buildTimeSelects(){
+  const hOpts = '<option value="">--</option>'+Array.from({length:24},(_,i)=>`<option value="${pad2(i)}">${pad2(i)}</option>`).join('');
+  const mOpts = '<option value="">--</option>'+['00','15','30','45'].map(m=>`<option value="${m}">${m}</option>`).join('');
+  $('#startH').innerHTML=hOpts; $('#endH').innerHTML=hOpts;
+  $('#startM').innerHTML=mOpts; $('#endM').innerHTML=mOpts;
+}
+function getTime(prefix){
+  const h=$('#'+prefix+'H').value, m=$('#'+prefix+'M').value;
+  return (h!==''&&m!=='') ? h+':'+m : '';
+}
+function setTime(prefix,val){
+  $('#'+prefix+'H').value = val ? val.split(':')[0] : '';
+  $('#'+prefix+'M').value = val ? val.split(':')[1] : '';
+}
+
+// hours worked from start/end time minus break (handles overnight)
+function hoursFromTimes(start,end,brk){
+  if(!start||!end) return 0;
+  const [sh,sm]=start.split(':').map(Number);
+  const [eh,em]=end.split(':').map(Number);
+  let mins=(eh*60+em)-(sh*60+sm);
+  if(mins<0) mins+=24*60;
+  mins-=(brk||0);
+  if(mins<0) mins=0;
+  return Math.round((mins/60)*100)/100;
+}
+
+function refreshEstimate(){
+  let v=0;
+  if(curType==='dhl'){
+    v = num($('#inStops').value)*RATE.stop + num($('#inPkg').value)*RATE.pkg;
+  } else {
+    const h=hoursFromTimes(getTime('start'),getTime('end'),num($('#inBreak').value));
+    $('#calcHours').textContent = fmtHours(h)+' uur';
+    v = h*($('#inSunday').checked?RATE.sundayHour:RATE.hour);
+  }
+  $('#estDay').textContent = eur(v);
+}
+
+// prefill the form from an existing entry for the selected date
+function loadForm(){
+  const e=entries[$('#inDate').value];
+  if(curType==='dhl'){
+    $('#inStops').value = e&&e.stops?e.stops:'';
+    $('#inPkg').value   = e&&e.packages?e.packages:'';
+  } else {
+    setTime('start', e&&e.start?e.start:'');
+    setTime('end',   e&&e.end?e.end:'');
+    $('#inBreak').value = e&&e.break?e.break:'';
+    $('#inSunday').checked = e ? !!e.sunday : isSunday($('#inDate').value);
+  }
+  refreshEstimate();
+}
+
+$('#saveBtn').onclick=()=>{
+  const date=$('#inDate').value;
+  if(!date){ toast('Kies eerst een datum'); return; }
+  const e = entries[date] || {stops:0,packages:0,hours:0};
+  if(curType==='dhl'){
+    e.stops    = num($('#inStops').value);
+    e.packages = num($('#inPkg').value);
+  } else {
+    e.start = getTime('start');
+    e.end   = getTime('end');
+    e.break = num($('#inBreak').value);
+    e.sunday = $('#inSunday').checked;
+    e.hours = hoursFromTimes(e.start,e.end,e.break);
+  }
+  if(!e.stops && !e.packages && !e.hours){ delete entries[date]; }
+  else entries[date]=e;
+  if(curType==='dhl'){ $('#inStops').value=$('#inPkg').value=''; }
+  else { setTime('start',''); setTime('end',''); $('#inBreak').value=''; $('#inSunday').checked=isSunday(date); }
+  refreshEstimate(); renderRecent();
+  persist(()=>pushEntry(date), 'Opgeslagen ✓');
+};
+
+function renderRecent(){
+  const dates=Object.keys(entries).sort().reverse().slice(0,12);
+  const el=$('#recentList');
+  if(!dates.length){ el.innerHTML='<div class="empty">Nog niks gelogd.</div>'; return; }
+  el.innerHTML = dates.map(d=>{
+    const e=entries[d]; const parts=[]; const rows=[];
+    if(e.stops||e.packages){
+      rows.push(row(d,'dhl',
+        [e.stops?e.stops+' stops':'', e.packages?e.packages+' pakketten':''].filter(Boolean).join(' · '),
+        earnDhl(e)));
+    }
+    if(e.hours){
+      const t = e.start&&e.end ? e.start+'–'+e.end : '';
+      const brk = e.break ? ' (−'+e.break+'m pauze)' : '';
+      const sun = e.sunday ? ' · zondag' : '';
+      const desc = (t?t+' · ':'')+fmtHours(e.hours)+' uur'+sun+brk;
+      rows.push(row(d,'dragon', desc, earnDragon(e)));
+    }
+    return rows.join('');
+  }).join('');
+  el.querySelectorAll('.x').forEach(x=>x.onclick=()=>{
+    const {d,job}=x.dataset;
+    const e=entries[d];
+    if(job==='dhl'){ e.stops=0; e.packages=0; } else { e.hours=0; e.start=''; e.end=''; e.break=0; e.sunday=false; }
+    renderRecent();
+    persist(()=>pushEntry(d));
+  });
+}
+function row(d,job,desc,amt){
+  const dd=parseISO(d);
+  return `<div class="entry">
+    <div class="date">${dd.toLocaleDateString('nl-NL',{day:'2-digit',month:'2-digit'})}</div>
+    <div class="desc"><span class="badge ${job}">${job==='dhl'?'DHL':'Dragonfly'}</span><br>${desc}</div>
+    <div class="amt">${eur(amt)}</div>
+    <button class="x" data-d="${d}" data-job="${job}">✕</button>
+  </div>`;
+}
+function descFor(e,job){
+  if(job==='dhl') return [e.stops?e.stops+' stops':'', e.packages?e.packages+' pakketten':''].filter(Boolean).join(' · ');
+  const t=e.start&&e.end?e.start+'–'+e.end:'';
+  const brk=e.break?' (−'+e.break+'m pauze)':'';
+  const sun=e.sunday?' · zondag':'';
+  return (t?t+' · ':'')+fmtHours(e.hours)+' uur'+sun+brk;
+}
+function fullRow(d,job,desc,amt){
+  const dd=parseISO(d);
+  return `<div class="entry">
+    <div class="date">${dd.toLocaleDateString('nl-NL',{day:'2-digit',month:'2-digit'})}</div>
+    <div class="desc"><span class="badge ${job}">${job==='dhl'?'DHL':'Dragonfly'}</span><br>${desc}</div>
+    <div class="amt">${eur(amt)}</div>
+    <button class="edit" data-d="${d}" data-job="${job}" aria-label="Aanpassen">✏️</button>
+    <button class="x" data-d="${d}" data-job="${job}">✕</button>
+  </div>`;
+}
+
+// ---------- Alle logs (modal) ----------
+function renderAll(){
+  const dates=Object.keys(entries).sort().reverse();
+  const el=$('#allList');
+  if(!dates.length){ el.innerHTML='<div class="empty">Nog niks gelogd.</div>'; return; }
+  el.innerHTML = dates.map(d=>{
+    const e=entries[d], rows=[];
+    if(e.stops||e.packages) rows.push(fullRow(d,'dhl', descFor(e,'dhl'), earnDhl(e)));
+    if(e.hours)             rows.push(fullRow(d,'dragon', descFor(e,'dragon'), earnDragon(e)));
+    return rows.join('');
+  }).join('');
+  el.querySelectorAll('.x').forEach(x=>x.onclick=()=>{
+    const {d,job}=x.dataset, e=entries[d];
+    if(job==='dhl'){ e.stops=0; e.packages=0; } else { e.hours=0; e.start=''; e.end=''; e.break=0; e.sunday=false; }
+    renderAll(); renderRecent();
+    persist(()=>pushEntry(d));
+  });
+  el.querySelectorAll('.edit').forEach(b=>b.onclick=()=>{
+    const {d,job}=b.dataset;
+    $('nav button[data-view="invoer"]').click();
+    curType=job;
+    $$('#typeSeg button').forEach(x=>x.classList.toggle('on', x.dataset.type===job));
+    $('#fieldsDhl').style.display    = job==='dhl'?'block':'none';
+    $('#fieldsDragon').style.display = job==='dragon'?'block':'none';
+    $('#inDate').value=d;
+    loadForm();
+    closeAll();
+    window.scrollTo({top:0,behavior:'smooth'});
+    toast('Aanpassen — pas aan en druk Opslaan');
+  });
+}
+function openAll(){ renderAll(); $('#allModal').classList.add('show'); }
+function closeAll(){ $('#allModal').classList.remove('show'); }
+$('#showAllBtn').onclick=openAll;
+$('#closeAll').onclick=closeAll;
+
+// ---------- Weekoverzicht ----------
+function buildWeeks(){
+  const map={};
+  Object.keys(entries).forEach(d=>{
+    const dt=parseISO(d), mon=mondayOf(dt), key=weekKey(dt);
+    if(!map[key]) map[key]={key, mon, stops:0, packages:0, hours:0, dragonEarn:0, hasSunday:false};
+    const e=entries[d];
+    map[key].stops+=e.stops||0; map[key].packages+=e.packages||0; map[key].hours+=e.hours||0;
+    map[key].dragonEarn+=earnDragon(e);
+    if(e.sunday && e.hours) map[key].hasSunday=true;
+  });
+  return Object.values(map).sort((a,b)=>b.mon-a.mon);
+}
+
+// remember which cards / detail lists are expanded across re-renders
+const openWeeks = new Set();
+const openDetails = new Set();
+
+// per-day Dragonfly rows for one week (date · van–tot · uren)
+function dragonDaysHtml(w){
+  const days = Object.keys(entries)
+    .filter(d => weekKey(parseISO(d))===w.key && entries[d].hours)
+    .sort();
+  return days.map(d=>{
+    const e=entries[d], dt=parseISO(d);
+    const dstr = dt.toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short'});
+    const rng  = (e.start&&e.end) ? e.start+'–'+e.end : '—';
+    const zo   = e.sunday ? '<span class="zo">zo</span>' : '';
+    return `<div class="dday"><span>${dstr}${zo}</span><span class="rng">${rng}</span><span class="hrs">${fmtHours(e.hours)} u</span></div>`;
+  }).join('');
+}
+
+// Dragonfly-uren in het exacte formaat voor de werkgever
+function dragonExport(w){
+  const days = Object.keys(entries)
+    .filter(d => weekKey(parseISO(d))===w.key && entries[d].hours)
+    .sort();
+  const lines=[]; let total=0;
+  days.forEach(d=>{
+    const e=entries[d], dt=parseISO(d);
+    lines.push(pad2(dt.getDate())+'-'+pad2(dt.getMonth()+1)+'-'+dt.getFullYear());
+    const range = (e.start&&e.end) ? e.start+'-'+e.end+' ' : '';
+    lines.push(range+fmtHours(e.hours));
+    total+=e.hours;
+  });
+  const {week}=isoWeek(w.mon);
+  lines.push('Week '+week);
+  lines.push('Totaal '+fmtHours(total));
+  return lines.join('\n');
+}
+
+function copyText(txt){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(()=>toast('Uren gekopieerd ✓')).catch(()=>fallbackCopy(txt));
+  } else fallbackCopy(txt);
+}
+function fallbackCopy(txt){
+  const ta=document.createElement('textarea');
+  ta.value=txt; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try{ document.execCommand('copy'); toast('Uren gekopieerd ✓'); }
+  catch(e){ toast('Kopiëren mislukt'); }
+  document.body.removeChild(ta);
+}
+
+function renderWeeks(){
+  const weeks=buildWeeks();
+  const list=$('#weekList');
+  const now=new Date(); now.setHours(0,0,0,0);
+
+  // next payout: nearest future payoutDate among weeks (>= today)
+  let next=null;
+  weeks.forEach(w=>{
+    const p=payoutDate(w.mon);
+    if(p>=now && (!next || p<next.pay)) next={pay:p,w};
+  });
+  if(next){
+    const dhl=next.w.stops*RATE.stop+next.w.packages*RATE.pkg;
+    const dr=next.w.dragonEarn;
+    $('#nextPayAmt').textContent=eur(dhl+dr);
+    $('#nextPayIncl').textContent='incl. btw '+eur(incl(dhl+dr));
+    const {week}=isoWeek(next.w.mon);
+    $('#nextPayMeta').textContent='Week '+week+' · op '+fmtFull(next.pay);
+  } else {
+    $('#nextPayAmt').textContent=eur(0);
+    $('#nextPayIncl').textContent='';
+    $('#nextPayMeta').textContent='Geen openstaande uitbetaling';
+  }
+
+  if(!weeks.length){ list.innerHTML='<div class="empty">Nog geen weken om te tonen.</div>'; return; }
+
+  list.innerHTML=weeks.map(w=>{
+    const {week,year}=isoWeek(w.mon);
+    const sun=new Date(w.mon); sun.setDate(sun.getDate()+6);
+    const dhl=w.stops*RATE.stop+w.packages*RATE.pkg;
+    const dr=w.dragonEarn;
+    const tot=dhl+dr;
+    const pay=payoutDate(w.mon);
+    const isPaid=!!paid[w.key];
+    return `<div class="weekcard">
+      <div class="weekhead" data-k="${w.key}">
+        <div>
+          <div class="wk">Week ${week} <span style="color:var(--muted);font-weight:500">· ${year}</span></div>
+          <div class="range">${fmtDay(w.mon)} – ${fmtDay(sun)}</div>
+        </div>
+        <div class="total">
+          <div class="eur">${eur(tot)}</div>
+          <div class="incl">incl. btw ${eur(incl(tot))}</div>
+          <button class="stat ${isPaid?'paid':'pending'}" data-k="${w.key}">${isPaid?'✓ Ontvangen':'○ Nog te ontvangen'}</button>
+        </div>
+      </div>
+      <div class="weekbody ${openWeeks.has(w.key)?'open':''}" id="wb-${w.key}">
+        <div class="brk"><span><span class="badge dhl">DHL</span> ${w.stops} stops · ${w.packages} pakketten</span><span>${eur(dhl)}</span></div>
+        ${w.hours>0 ? `
+        <div class="brk dragon-row ${openDetails.has(w.key)?'open':''}" data-k="${w.key}"><span><span class="badge dragon">Dragonfly</span> ${fmtHours(w.hours)} uur${w.hasSunday?' · incl. zondag':''} <span class="chev">▸</span></span><span>${eur(dr)}</span></div>
+        <div class="dragon-detail ${openDetails.has(w.key)?'open':''}" id="dd-${w.key}">${dragonDaysHtml(w)}</div>`
+        : `<div class="brk"><span><span class="badge dragon">Dragonfly</span> 0 uur</span><span>${eur(0)}</span></div>`}
+        <div class="brk"><span style="color:var(--text);font-weight:700">Totaal (ex btw)</span><span style="font-size:15px">${eur(tot)}</span></div>
+        <div class="brk"><span>Incl. btw (21%)</span><span>${eur(incl(tot))}</span></div>
+        <div class="payout">📅 Uitbetaling: <b style="color:var(--text)">${fmtFull(pay)}</b></div>
+        ${w.hours>0 ? `<button class="btn ghost sm copyDragon" data-k="${w.key}" style="width:100%;margin-top:12px">📋 Kopieer Dragonfly-uren</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  list.querySelectorAll('.weekhead').forEach(h=>h.onclick=()=>{
+    const k=h.dataset.k, body=$('#wb-'+k);
+    if(body.classList.toggle('open')) openWeeks.add(k); else openWeeks.delete(k);
+  });
+  list.querySelectorAll('.dragon-row').forEach(r=>r.onclick=ev=>{
+    ev.stopPropagation();
+    const k=r.dataset.k;
+    r.classList.toggle('open');
+    if($('#dd-'+k).classList.toggle('open')) openDetails.add(k); else openDetails.delete(k);
+  });
+  list.querySelectorAll('.stat').forEach(b=>b.onclick=ev=>{
+    ev.stopPropagation();
+    const k=b.dataset.k;
+    const on=!paid[k];
+    if(on) paid[k]=true; else delete paid[k];
+    renderWeeks();
+    persist(()=>setPaidRemote(k,on));
+  });
+  list.querySelectorAll('.copyDragon').forEach(b=>b.onclick=ev=>{
+    ev.stopPropagation();
+    const w=weeks.find(x=>x.key===b.dataset.k);
+    copyText(dragonExport(w));
+  });
+}
+const fmtHours = h => Number.isInteger(h)?h:h.toFixed(2).replace('.',',').replace(/,?0+$/,'');
+
+// ---------- Instellingen ----------
+function fillSettings(){
+  $('#payDelay').value = settings.payDelay;
+}
+$('#savePay').onclick=()=>{
+  settings.payDelay=parseInt($('#payDelay').value)||0;
+  persist(()=>savePayDelayRemote(), 'Opgeslagen ✓');
+};
+$('#exportBtn').onclick=()=>{
+  const blob=new Blob([JSON.stringify({settings,entries,paid},null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='uren-backup-'+todayISO()+'.json';
+  a.click();
+};
+$('#importBtn').onclick=()=>$('#importFile').click();
+$('#importFile').onchange=e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    const text=String(r.result||'');
+    const looksJson = /\.json$/i.test(f.name) || text.trim().startsWith('{');
+    try{
+      if(looksJson){
+        const d=JSON.parse(text);
+        if(d.settings&&d.settings.payDelay!=null) settings.payDelay=d.settings.payDelay;
+        if(d.entries) entries={...entries,...d.entries};
+        if(d.paid) paid={...paid,...d.paid};
+      } else {
+        const parsed=parseHoursText(text);
+        const n=Object.keys(parsed).length;
+        if(!n){ toast('Geen uren gevonden in het bestand'); e.target.value=''; return; }
+        entries={...entries,...parsed};
+      }
+      fillSettings(); renderRecent(); loadForm();
+      persist(()=>uploadAll(), 'Geïmporteerd ✓');
+    }catch(err){ console.error(err); toast('Kon het bestand niet lezen'); }
+    e.target.value='';
+  };
+  r.readAsText(f);
+};
+
+// Leest een .md/.txt-urenlijst en maakt er dag-invoeren van.
+// Herkent: datums (12-06-2026 of 2026-06-12), Dragonfly-tijden (13:30-21:00,
+// met eventueel pauze), en DHL ("40 stops", "120 pakketten"). Zondag = auto.
+function parseHoursText(text){
+  const out={};
+  const dateRe=/(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})|(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/;
+  const timeRe=/(\d{1,2}:\d{2})\s*[-–—]\s*(\d{1,2}:\d{2})/;
+  const padT=t=>{ const [h,m]=t.split(':'); return pad2(+h)+':'+m.padStart(2,'0'); };
+  let cur=null;
+  text.split(/\r?\n/).forEach(raw=>{
+    const line=raw.trim(); if(!line) return;
+    const dm=line.match(dateRe);
+    if(dm){
+      let y,m,d;
+      if(dm[1]!==undefined){ d=+dm[1]; m=+dm[2]; y=+dm[3]; } else { y=+dm[4]; m=+dm[5]; d=+dm[6]; }
+      cur=y+'-'+pad2(m)+'-'+pad2(d);
+      if(!out[cur]) out[cur]={stops:0,packages:0,hours:0,start:'',end:'',break:0,sunday:false};
+    }
+    // regels als "Week 24" of "Totaal 15,5" overslaan (tenzij ze echte inhoud hebben)
+    if(!cur) return;
+    const e=out[cur];
+    const tm=line.match(timeRe);
+    if(tm){
+      e.start=padT(tm[1]); e.end=padT(tm[2]);
+      const bm=line.match(/(\d{1,3})\s*(?:m|min|minuten)\b/i) || line.match(/pauze\D*(\d{1,3})/i);
+      e.break=bm?+bm[1]:0;
+      e.hours=hoursFromTimes(e.start,e.end,e.break);
+      e.sunday=/\bzondag\b/i.test(line) || parseISO(cur).getDay()===0;
+    }
+    const sm=line.match(/(\d+)\s*stop/i);   if(sm) e.stops=+sm[1];
+    const pm=line.match(/(\d+)\s*(?:pakket|package)/i); if(pm) e.packages=+pm[1];
+  });
+  Object.keys(out).forEach(d=>{ const e=out[d]; if(!e.stops&&!e.packages&&!e.hours) delete out[d]; });
+  return out;
+}
+
+// Alle huidige gegevens (na import of migratie) naar de database schrijven
+async function uploadAll(){
+  for(const d of Object.keys(entries)) await pushEntry(d);
+  for(const k of Object.keys(paid)) await setPaidRemote(k,true);
+  await savePayDelayRemote();
+}
+
+// ---------- Account / login ----------
+let authMode='login';
+function setAuthMode(m){
+  authMode=m;
+  $('#authTag').textContent = m==='login' ? 'Log in om je uren te zien' : 'Maak een account om te starten';
+  $('#authBtn').textContent = m==='login' ? 'Inloggen' : 'Account aanmaken';
+  $('#authPass').setAttribute('autocomplete', m==='login'?'current-password':'new-password');
+  $('#authSwap').innerHTML = m==='login'
+    ? 'Nog geen account? <button id="swapBtn">Account aanmaken</button>'
+    : 'Al een account? <button id="swapBtn">Inloggen</button>';
+  $('#swapBtn').onclick=()=>{ setAuthErr(''); setAuthMode(m==='login'?'signup':'login'); };
+}
+function setAuthErr(msg, ok){ const el=$('#authErr'); el.textContent=msg||''; el.classList.toggle('ok', !!ok); }
+function showAuth(){ $('#authScreen').classList.add('show'); }
+function hideAuth(){ $('#authScreen').classList.remove('show'); }
+
+$('#authBtn').onclick=async ()=>{
+  const email=$('#authEmail').value.trim(), pass=$('#authPass').value;
+  if(!email||!pass){ setAuthErr('Vul je e-mail en wachtwoord in'); return; }
+  if(!sbConfigured()){ setAuthErr('De app is nog niet gekoppeld aan Supabase. Vul SB_URL en SB_ANON in de code in.'); return; }
+  $('#authBtn').disabled=true; setAuthErr('Bezig…');
+  try{
+    if(authMode==='signup'){
+      const logged=await signUp(email,pass);
+      if(!logged){ setAuthErr('Account aangemaakt! Bevestig via de e-mail die we stuurden en log daarna in.', true); setAuthMode('login'); $('#authBtn').disabled=false; return; }
+    } else {
+      await signIn(email,pass);
+    }
+    setAuthErr('');
+    await afterLogin();
+  }catch(e){ setAuthErr(e.message||'Er ging iets mis'); }
+  $('#authBtn').disabled=false;
+};
+
+async function afterLogin(){
+  await pullAll();               // controleert meteen of het token geldig is
+  hideAuth();
+  $('#whoami').textContent = 'Ingelogd als '+(session.email||'onbekend');
+  fillSettings(); renderRecent(); loadForm();
+}
+function logout(){
+  clearSession();
+  entries={}; paid={}; settings={payDelay:5};
+  renderRecent();
+  $('#authEmail').value=''; $('#authPass').value='';
+  setAuthMode('login'); setAuthErr(''); showAuth();
+}
+$('#logoutBtn').onclick=logout;
+
+// ---------- Toast ----------
+let toastT;
+function toast(msg){
+  const t=$('#toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),1800);
+}
+
+// ---------- Init ----------
+buildTimeSelects(); fillSettings(); renderRecent(); loadForm(); setAuthMode('login');
+(async ()=>{
+  if(session && session.access_token && sbConfigured()){
+    try{ await afterLogin(); }
+    catch(e){ console.error(e); clearSession(); showAuth(); }
+  } else {
+    showAuth();
+  }
+})();
+</script>
+</body>
+</html>
