@@ -201,21 +201,21 @@
 <body>
 <!-- ============ INLOGGEN / REGISTREREN ============ -->
 <div class="auth show" id="authScreen">
-  <div class="auth-box">
+  <form class="auth-box" id="authForm" autocomplete="on">
     <h1>Uren &amp; Verdiensten</h1>
     <p class="tag" id="authTag">Log in om je uren te zien</p>
     <div class="field">
       <label for="authEmail">E-mailadres</label>
-      <input type="email" id="authEmail" autocomplete="email" placeholder="jij@voorbeeld.nl">
+      <input type="email" id="authEmail" name="email" autocomplete="username" inputmode="email" placeholder="jij@voorbeeld.nl" required>
     </div>
     <div class="field">
       <label for="authPass">Wachtwoord</label>
-      <input type="password" id="authPass" autocomplete="current-password" placeholder="••••••••">
+      <input type="password" id="authPass" name="password" autocomplete="current-password" placeholder="••••••••" required>
     </div>
     <div class="aerr" id="authErr"></div>
-    <button class="btn" id="authBtn">Inloggen</button>
-    <div class="swap" id="authSwap">Nog geen account? <button id="swapBtn">Account aanmaken</button></div>
-  </div>
+    <button class="btn" id="authBtn" type="submit">Inloggen</button>
+    <div class="swap" id="authSwap">Nog geen account? <button type="button" id="swapBtn">Account aanmaken</button></div>
+  </form>
 </div>
 
 <header>
@@ -963,15 +963,16 @@ function setAuthMode(m){
   $('#authBtn').textContent = m==='login' ? 'Inloggen' : 'Account aanmaken';
   $('#authPass').setAttribute('autocomplete', m==='login'?'current-password':'new-password');
   $('#authSwap').innerHTML = m==='login'
-    ? 'Nog geen account? <button id="swapBtn">Account aanmaken</button>'
-    : 'Al een account? <button id="swapBtn">Inloggen</button>';
+    ? 'Nog geen account? <button type="button" id="swapBtn">Account aanmaken</button>'
+    : 'Al een account? <button type="button" id="swapBtn">Inloggen</button>';
   $('#swapBtn').onclick=()=>{ setAuthErr(''); setAuthMode(m==='login'?'signup':'login'); };
 }
 function setAuthErr(msg, ok){ const el=$('#authErr'); el.textContent=msg||''; el.classList.toggle('ok', !!ok); }
 function showAuth(){ $('#authScreen').classList.add('show'); }
 function hideAuth(){ $('#authScreen').classList.remove('show'); }
 
-$('#authBtn').onclick=async ()=>{
+$('#authForm').addEventListener('submit', async (ev)=>{
+  ev.preventDefault();
   const email=$('#authEmail').value.trim(), pass=$('#authPass').value;
   if(!email||!pass){ setAuthErr('Vul je e-mail en wachtwoord in'); return; }
   if(!sbConfigured()){ setAuthErr('De app is nog niet gekoppeld aan Supabase. Vul SB_URL en SB_ANON in de code in.'); return; }
@@ -987,7 +988,7 @@ $('#authBtn').onclick=async ()=>{
     await afterLogin();
   }catch(e){ setAuthErr(e.message||'Er ging iets mis'); }
   $('#authBtn').disabled=false;
-};
+});
 
 async function afterLogin(){
   await pullAll();               // controleert meteen of het token geldig is
