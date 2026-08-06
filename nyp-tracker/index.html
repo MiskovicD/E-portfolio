@@ -191,6 +191,22 @@
     <div class="aerr" id="authErr"></div>
     <button class="btn" id="authBtn" type="submit">Inloggen</button>
     <div class="swap" id="authSwap">Nog geen account? <button type="button" id="swapBtn">Account aanmaken</button></div>
+    <div class="swap" id="authForgot" style="margin-top:10px"><button type="button" id="forgotBtn">Wachtwoord vergeten?</button></div>
+  </form>
+
+  <form class="auth-box" id="resetForm" autocomplete="on" style="display:none">
+    <h1><span class="star">★</span> Nieuw wachtwoord</h1>
+    <p class="tag">Kies een nieuw wachtwoord voor je account.</p>
+    <div class="field">
+      <label for="newPass">Nieuw wachtwoord</label>
+      <input type="password" id="newPass" name="password" autocomplete="new-password" placeholder="••••••••" required>
+    </div>
+    <div class="field">
+      <label for="newPass2">Herhaal wachtwoord</label>
+      <input type="password" id="newPass2" name="password2" autocomplete="new-password" placeholder="••••••••" required>
+    </div>
+    <div class="aerr" id="resetErr"></div>
+    <button class="btn" id="resetSaveBtn" type="submit">Wachtwoord opslaan</button>
   </form>
 </div>
 
@@ -820,6 +836,7 @@ function setAuthMode(m){
   $('#authSwap').innerHTML = m==='login'
     ? 'Nog geen account? <button type="button" id="swapBtn">Account aanmaken</button>'
     : 'Al een account? <button type="button" id="swapBtn">Inloggen</button>';
+  $('#authForgot').style.display = m==='login' ? 'block' : 'none';
   $('#swapBtn').onclick=()=>{ setAuthErr(''); setAuthMode(m==='login'?'signup':'login'); };
 }
 function setAuthErr(msg, ok){ const el=$('#authErr'); el.textContent=msg||''; el.classList.toggle('ok', !!ok); }
@@ -856,9 +873,75 @@ function logout(){
   entries={}; paid={}; settings={payoutDay:24, submitDay:14};
   renderRecent();
   $('#authEmail').value=''; $('#authPass').value='';
+  $('#resetForm').style.display='none'; $('#authForm').style.display='block';
   setAuthMode('login'); setAuthErr(''); showAuth();
 }
 $('#logoutBtn').onclick=logout;
+
+// ---------- Wachtwoord vergeten / herstel ----------
+let recoveryTokens=null;
+
+// Stuurt een reset-mail. De link daarin brengt je terug op deze app met een
+// herstel-token in de URL, waarna je een nieuw wachtwoord kunt kiezen.
+async function requestReset(email){
+  const redirect=location.origin+location.pathname;
+  const res=await fetch(`${SB_URL}/auth/v1/recover?redirect_to=${encodeURIComponent(redirect)}`,{
+    method:"POST", headers:{apikey:SB_ANON,"Content-Type":"application/json"}, body:JSON.stringify({email})
+  });
+  if(!res.ok){ const d=await res.json().catch(()=>({})); throw new Error(d.error_description||d.msg||d.error||"Versturen mislukt"); }
+}
+$('#forgotBtn').onclick=async ()=>{
+  const email=$('#authEmail').value.trim();
+  if(!email){ setAuthErr('Vul eerst je e-mailadres in'); $('#authEmail').focus(); return; }
+  if(!sbConfigured()){ setAuthErr('De app is nog niet gekoppeld aan Supabase.'); return; }
+  $('#forgotBtn').disabled=true; setAuthErr('Bezig…');
+  try{
+    await requestReset(email);
+    setAuthErr('Gelukt! Check je mail voor de reset-link.', true);
+  }catch(e){ setAuthErr(e.message||'Er ging iets mis'); }
+  $('#forgotBtn').disabled=false;
+};
+
+function parseHashTokens(){
+  const h=(location.hash||'').replace(/^#/,'');
+  const p=new URLSearchParams(h);
+  return { access_token:p.get('access_token'), refresh_token:p.get('refresh_token'), type:p.get('type'), err:p.get('error_description') };
+}
+function enterRecoveryMode(tokens){
+  recoveryTokens=tokens;
+  $('#authForm').style.display='none';
+  $('#resetForm').style.display='block';
+  showAuth();
+}
+async function updatePassword(newPass){
+  const res=await fetch(`${SB_URL}/auth/v1/user`,{
+    method:"PUT",
+    headers:{ apikey:SB_ANON, Authorization:"Bearer "+recoveryTokens.access_token, "Content-Type":"application/json" },
+    body:JSON.stringify({password:newPass})
+  });
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(data.error_description||data.msg||data.error||"Wachtwoord wijzigen mislukt");
+  return data;
+}
+function setResetErr(m,ok){ const el=$('#resetErr'); el.textContent=m||''; el.classList.toggle('ok',!!ok); }
+$('#resetForm').addEventListener('submit', async (ev)=>{
+  ev.preventDefault();
+  const p1=$('#newPass').value, p2=$('#newPass2').value;
+  if(p1.length<6){ setResetErr('Kies minstens 6 tekens'); return; }
+  if(p1!==p2){ setResetErr('De wachtwoorden komen niet overeen'); return; }
+  $('#resetSaveBtn').disabled=true; setResetErr('Bezig…');
+  try{
+    const user=await updatePassword(p1);
+    // meteen ingelogd met het herstel-token
+    storeSession({ access_token:recoveryTokens.access_token, refresh_token:recoveryTokens.refresh_token, user_id:user.id, email:user.email, expires_at:Date.now()+3600*1000 });
+    recoveryTokens=null;
+    $('#newPass').value=''; $('#newPass2').value=''; setResetErr('');
+    $('#resetForm').style.display='none'; $('#authForm').style.display='block';
+    await afterLogin();
+    toast('Nieuw wachtwoord opgeslagen ✓');
+  }catch(e){ setResetErr(e.message||'Er ging iets mis'); }
+  $('#resetSaveBtn').disabled=false;
+});
 
 // ---------- Toast ----------
 let toastT;
@@ -875,6 +958,14 @@ if('serviceWorker' in navigator){
 // ---------- Init ----------
 buildTimeSelects(); fillSettings(); renderRecent(); loadForm(); setAuthMode('login');
 (async ()=>{
+  // Kom je binnen via een wachtwoord-reset-link? Toon dan direct het scherm
+  // om een nieuw wachtwoord te kiezen.
+  const ht=parseHashTokens();
+  if(ht.type==='recovery' && ht.access_token){
+    history.replaceState(null,'',location.pathname+location.search);
+    enterRecoveryMode(ht);
+    return;
+  }
   if(session && session.access_token && sbConfigured()){
     try{ await afterLogin(); }
     catch(e){ console.error(e); clearSession(); showAuth(); }
