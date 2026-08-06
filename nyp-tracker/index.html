@@ -905,7 +905,10 @@ $('#forgotBtn').onclick=async ()=>{
 function parseHashTokens(){
   const h=(location.hash||'').replace(/^#/,'');
   const p=new URLSearchParams(h);
-  return { access_token:p.get('access_token'), refresh_token:p.get('refresh_token'), type:p.get('type'), err:p.get('error_description') };
+  return {
+    access_token:p.get('access_token'), refresh_token:p.get('refresh_token'), type:p.get('type'),
+    error:p.get('error'), error_code:p.get('error_code'), err:p.get('error_description')
+  };
 }
 function enterRecoveryMode(tokens){
   recoveryTokens=tokens;
@@ -961,6 +964,14 @@ buildTimeSelects(); fillSettings(); renderRecent(); loadForm(); setAuthMode('log
   // Kom je binnen via een wachtwoord-reset-link? Toon dan direct het scherm
   // om een nieuw wachtwoord te kiezen.
   const ht=parseHashTokens();
+  if(ht.error){
+    history.replaceState(null,'',location.pathname+location.search);
+    showAuth();
+    setAuthErr(ht.error_code==='otp_expired'
+      ? 'De reset-link is verlopen of al gebruikt. Vraag hieronder een nieuwe aan.'
+      : (ht.err || 'De link is ongeldig. Vraag hieronder een nieuwe aan.'));
+    return;
+  }
   if(ht.type==='recovery' && ht.access_token){
     history.replaceState(null,'',location.pathname+location.search);
     enterRecoveryMode(ht);
