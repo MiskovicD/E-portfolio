@@ -311,7 +311,9 @@
     <div class="block">
       <div class="block-head"><h2>Je rekeningen</h2><button class="add-btn" id="addAccBtn">+ Rekening</button></div>
       <div class="list" id="accountsList"><div class="empty">Nog geen rekeningen toegevoegd.</div></div>
-      <p class="note">Bij een creditcard vul je in wat je nog moet betalen (het openstaande bedrag). Dat wordt van je netto vermogen afgetrokken.</p>
+      <button class="btn ghost" id="linkBankBtn" style="margin-top:16px">Koppel een bank (automatisch)</button>
+      <button class="btn ghost" id="refreshBankBtn" style="margin-top:10px;display:none">Ververs gekoppelde saldi</button>
+      <p class="note">Bij een creditcard vul je in wat je nog moet betalen. Automatisch koppelen werkt alleen-lezen via je bank (o.a. ABN AMRO en Knab). Trade Republic blijft handmatig.</p>
     </div>
   </section>
 
@@ -664,7 +666,7 @@ function accRow(a){
   const neg = val<0;
   return `<div class="acc" data-id="${a.id}" role="button" tabindex="0" aria-label="${escAttr(a.name)}, saldo bijwerken">
     <div class="acc-ic" aria-hidden="true">${esc(accInitials(a.name))}</div>
-    <div class="info"><div class="nm">${esc(a.name)}</div><div class="ty">${t.label}${isCredit(a)?' · nog te betalen':''}</div></div>
+    <div class="info"><div class="nm">${esc(a.name)}</div><div class="ty">${t.label}${isCredit(a)?' · nog te betalen':''}${a.gc_account_id?' · gekoppeld':''}</div></div>
     <div class="bal ${neg?'neg':''}">${neg?'− ':''}${eur(Math.abs(val))}</div>
   </div>`;
 }
@@ -677,9 +679,9 @@ function bindAccRows(container){
 
 function renderAccounts(){
   const el=$('#accountsList');
-  if(!accounts.length){ el.innerHTML='<div class="empty">Nog geen rekeningen toegevoegd.</div>'; return; }
-  el.innerHTML = accounts.map(a=>accRow(a)).join('');
+  el.innerHTML = accounts.length ? accounts.map(a=>accRow(a)).join('') : '<div class="empty">Nog geen rekeningen toegevoegd.</div>';
   bindAccRows(el);
+  const rb=$('#refreshBankBtn'); if(rb) rb.style.display = accounts.some(a=>a.gc_account_id) ? 'block' : 'none';
 }
 
 function renderGoals(){
@@ -871,6 +873,89 @@ function openGoal(g){
 }
 $('#addGoalBtn').onclick=()=>openGoal(null);
 
+// ================= Bankkoppeling (GoCardless via Edge Function) =================
+const FN_URL = SB_URL + "/functions/v1/gocardless";
+const appRedirect = location.origin + location.pathname;
+
+async function callFn(action, payload){
+  await ensureToken();
+  const res = await fetch(FN_URL, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json", apikey:SB_ANON, Authorization:"Bearer "+session.access_token },
+    body: JSON.stringify({ action, ...(payload||{}) })
+  });
+  const data = await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(data.error || ("Serverfout "+res.status));
+  return data;
+}
+function bankErr(e){
+  const m=String((e&&e.message)||e||"");
+  if(/Failed to fetch|NetworkError|TypeError/.test(m)) return "Geen verbinding met de koppel-server";
+  if(/\b404\b|Function not found|not found/i.test(m)) return "Koppel-functie nog niet geïnstalleerd in Supabase";
+  if(/\b401\b|niet ingelogd/.test(m)) return "Log opnieuw in en probeer nog eens";
+  return m.slice(0,90);
+}
+
+async function openBankPicker(){
+  toast("Banken laden…");
+  let list;
+  try{ list = await callFn("institutions",{country:"nl"}); }
+  catch(e){ toast(bankErr(e)); return; }
+  list.sort((a,b)=>a.name.localeCompare(b.name));
+  openModal("Kies je bank", `
+    <p class="note" style="margin:0 0 14px">Je wordt doorgestuurd naar je bank om in te loggen en toestemming te geven — alleen-lezen.</p>
+    <div class="field"><input type="text" id="bankSearch" placeholder="Zoek je bank…" autocomplete="off" autocapitalize="off"></div>
+    <div class="list" id="bankList"></div>
+  `);
+  const draw=(q)=>{
+    const f=list.filter(i=>i.name.toLowerCase().includes((q||"").toLowerCase())).slice(0,50);
+    const bl=$("#bankList");
+    bl.innerHTML = f.length ? f.map(i=>`<button class="acc bankopt" data-id="${escAttr(i.id)}" style="width:100%;background:none;border:none;border-bottom:1px solid var(--divider);cursor:pointer;text-align:left">
+        <div class="acc-ic" aria-hidden="true">${esc(i.name.slice(0,2).toUpperCase())}</div>
+        <div class="info"><div class="nm">${esc(i.name)}</div></div>
+      </button>`).join("") : '<div class="empty">Geen bank gevonden.</div>';
+    bl.querySelectorAll(".bankopt").forEach(b=>b.onclick=()=>doLink(b.dataset.id));
+  };
+  draw("");
+  $("#bankSearch").oninput=e=>draw(e.target.value);
+}
+
+async function doLink(institution_id){
+  toast("Koppeling voorbereiden…");
+  try{
+    const r=await callFn("link",{ institution_id, redirect: appRedirect });
+    localStorage.setItem("fin.pendingReq", r.requisition_id);
+    location.href = r.link;   // door naar de bank
+  }catch(e){ toast(bankErr(e)); }
+}
+
+async function maybeFinalizeBank(){
+  const pending = localStorage.getItem("fin.pendingReq");
+  const hasRef = /[?&]ref=/.test(location.search);
+  if(!pending && !hasRef) return;
+  if(location.search) history.replaceState(null,"",location.pathname);
+  if(!pending) return;
+  toast("Saldo ophalen…");
+  try{
+    const r=await callFn("finalize",{ requisition_id: pending });
+    localStorage.removeItem("fin.pendingReq");
+    await pullAll(); renderAll();
+    const n=(r.accounts||[]).length;
+    toast(n ? (n+" rekening"+(n>1?"en":"")+" gekoppeld ✓") : "Koppeling voltooid — nog geen saldo, probeer 'Ververs'");
+  }catch(e){ localStorage.removeItem("fin.pendingReq"); toast(bankErr(e)); }
+}
+
+async function refreshLinked(){
+  const ids=accounts.filter(a=>a.gc_account_id).map(a=>a.gc_account_id);
+  if(!ids.length){ toast("Geen gekoppelde rekeningen"); return; }
+  toast("Saldi verversen…");
+  try{ await callFn("refresh",{ account_ids: ids }); await pullAll(); renderAll(); toast("Bijgewerkt ✓"); }
+  catch(e){ toast(bankErr(e)); }
+}
+
+$('#linkBankBtn').onclick=openBankPicker;
+$('#refreshBankBtn').onclick=refreshLinked;
+
 // ================= Back-up =================
 $('#exportBtn').onclick=()=>{
   const blob=new Blob([JSON.stringify({accounts,planned,goals},null,2)],{type:'application/json'});
@@ -942,6 +1027,7 @@ async function afterLogin(){
   hideAuth();
   $('#whoami').textContent = 'Ingelogd als '+(session.email||'onbekend');
   renderAll();
+  maybeFinalizeBank();   // terug van een bank-koppeling? saldo ophalen
 }
 function logout(){
   clearSession();
