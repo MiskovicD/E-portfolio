@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FFFFFF">
+<title>Financiën</title>
+
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Financiën">
+<style>
+  :root{
+    --bg:#FFFFFF;
+    --surface:#FFFFFF;
+    --elevated:#F5F7FA;
+    --border:#E6E9EF;
+    --border-strong:#D4D9E2;
+    --divider:rgba(16,20,30,.08);
+    --text:#0F1115;
+    --text2:#586172;
+    --text3:#7A8494;
+    --accent:#0F1115;
+    --accent-hover:#2A2E38;
+    --pos:#059669;
+    --neg:#DC2626;
+    --neg-soft:rgba(220,38,38,.08);
+    --r-lg:16px;
+    --r-md:10px;
+    --r-sm:8px;
+    --r-btn:11px;
+    --maxw:600px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--text);line-height:1.45;font-size:15px;
+    font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;
+    padding-bottom:calc(env(safe-area-inset-bottom) + 78px);
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  }
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+  /* ---------- Header ---------- */
+  header{
+    position:sticky;top:0;z-index:30;
+    background:rgba(255,255,255,.86);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--divider);
+    padding:calc(env(safe-area-inset-top) + 14px) 20px 13px;
+  }
+  header .hwrap{max-width:var(--maxw);margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+  header h1{margin:0;font-size:21px;font-weight:700;letter-spacing:-.02em}
+
+  main{max-width:var(--maxw);margin:0 auto;padding:20px 16px 8px}
+  .view{display:none}
+  .view.active{display:block;animation:fade .2s ease}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+
+  /* ---------- Widgets & blocks ---------- */
+  .widget{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px}
+  .widget + .widget{margin-top:16px}
+  .block{margin-top:32px}
+  .block:first-child{margin-top:4px}
+  .block-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;padding:0 2px}
+  .block-head h2{margin:0;font-size:17px;font-weight:600;letter-spacing:-.01em}
+  .add-btn{border:none;background:none;color:var(--accent);font:inherit;font-size:14px;font-weight:600;cursor:pointer;padding:8px;margin:-8px;border-radius:var(--r-sm);min-height:40px;transition:color .15s,background .15s}
+  .add-btn:hover{color:var(--accent-hover);background:var(--elevated)}
+  .note{font-size:12px;color:var(--text3);line-height:1.55;margin:14px 2px 0}
+
+  .eyebrow{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--text3)}
+
+  /* ---------- Netto vermogen ---------- */
+  .nw-amount{font-size:40px;font-weight:700;letter-spacing:-.025em;line-height:1.04;margin-top:9px}
+  .nw-amount.neg{color:var(--neg)}
+  .nw-split{display:flex;margin-top:18px;padding-top:16px;border-top:1px solid var(--divider)}
+  .nw-split>div{flex:1}
+  .nw-split .k{font-size:12px;color:var(--text3);margin-bottom:4px}
+  .nw-split .v{font-size:16px;font-weight:600}
+  .nw-split .v.neg{color:var(--neg)}
+
+  /* ---------- Segmented control ---------- */
+  .segmented{display:flex;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-md);padding:4px;overflow-x:auto;scrollbar-width:none}
+  .segmented::-webkit-scrollbar{display:none}
+  .segmented button{flex:1 0 auto;white-space:nowrap;min-height:38px;padding:8px 14px;border:none;background:none;color:var(--text3);font:inherit;font-size:13px;font-weight:600;border-radius:var(--r-sm);cursor:pointer;transition:background .15s,color .15s}
+  .segmented button:hover{color:var(--text2)}
+  .segmented button.on{background:var(--accent);color:#fff}
+
+  /* ---------- Cashflow ---------- */
+  .cf-fore{margin-top:18px}
+  .cf-amount{font-size:30px;font-weight:700;letter-spacing:-.02em;margin-top:8px;line-height:1.05}
+  .cf-sub{font-size:13px;color:var(--text3);margin-top:3px}
+  .cf-delta{font-size:14px;font-weight:600;margin-top:10px}
+  .cf-delta.up{color:var(--pos)}
+  .cf-delta.down{color:var(--neg)}
+  .cf-hint{font-size:12px;color:var(--text3);margin-top:3px}
+  .chart{margin:16px 0 2px;padding:0}
+  .chart svg{display:block;width:100%}
+
+  .cf-list{margin-top:6px;border-top:1px solid var(--divider)}
+  .tx{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--divider)}
+  .tx:last-child{border-bottom:none}
+  .tx .date{flex:0 0 auto;width:48px;font-size:12px;color:var(--text3);white-space:nowrap}
+  .tx .name{flex:1 1 auto;min-width:0;font-size:15px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tx .right{flex:0 0 auto;text-align:right;white-space:nowrap;padding-left:8px}
+  .tx .amt{font-size:15px;font-weight:600}
+  .tx .amt.pos{color:var(--pos)}
+  .tx .amt.neg{color:var(--neg)}
+  .tx .after{font-size:12px;color:var(--text3);margin-top:2px}
+
+  /* ---------- Rekeningen ---------- */
+  .list{margin-top:2px}
+  .acc{display:flex;align-items:center;gap:13px;padding:12px 8px;margin:0 -8px;border-bottom:1px solid var(--divider);cursor:pointer;border-radius:var(--r-md);transition:background .15s}
+  .acc:last-child{border-bottom:none}
+  .acc:hover{background:var(--surface)}
+  .acc:active{background:var(--elevated)}
+  .acc-ic{flex:0 0 auto;width:38px;height:38px;border-radius:var(--r-md);background:var(--elevated);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--text2);letter-spacing:.02em}
+  .acc .info{flex:1 1 auto;min-width:0}
+  .acc .nm{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .acc .ty{font-size:12px;color:var(--text3);margin-top:2px}
+  .acc .bal{flex:0 0 auto;text-align:right;font-size:15px;font-weight:600;white-space:nowrap;padding-left:8px}
+  .acc .bal.neg{color:var(--neg)}
+
+  /* ---------- Doelen ---------- */
+  .goal{position:relative;padding:15px 2px;border-bottom:1px solid var(--divider)}
+  .goal:last-child{border-bottom:none}
+  .goal-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .goal-name{font-size:15px;font-weight:600}
+  .kebab{flex:0 0 auto;border:none;background:none;color:var(--text3);cursor:pointer;padding:8px;margin:-8px;border-radius:var(--r-sm);min-height:40px;min-width:40px;display:flex;align-items:center;justify-content:center;transition:color .15s,background .15s}
+  .kebab:hover{color:var(--text2);background:var(--surface)}
+  .goal-meta{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:9px 0;font-size:13px;color:var(--text2)}
+  .goal-pct{color:var(--text2);font-weight:600}
+  .progress{height:6px;border-radius:999px;background:var(--elevated);overflow:hidden}
+  .progress>i{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .35s ease}
+  .menu{position:absolute;top:42px;right:2px;z-index:20;min-width:158px;background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--r-md);padding:5px;display:none;box-shadow:0 8px 24px -12px rgba(16,20,30,.18)}
+  .menu.open{display:block}
+  .menu-item{display:block;width:100%;text-align:left;border:none;background:none;color:var(--text);font:inherit;font-size:14px;padding:11px 12px;border-radius:var(--r-sm);cursor:pointer;min-height:42px;transition:background .12s}
+  .menu-item:hover{background:var(--surface)}
+  .menu-item.danger{color:var(--neg)}
+
+  /* ---------- Geplande posten ---------- */
+  .seg{display:flex;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-md);padding:4px;margin-bottom:16px}
+  .seg button{flex:1;min-height:38px;padding:8px;border:none;background:none;color:var(--text3);font:inherit;font-size:13px;font-weight:600;border-radius:var(--r-sm);cursor:pointer;transition:background .15s,color .15s}
+  .seg button:hover{color:var(--text2)}
+  .seg button.on{background:var(--accent);color:#fff}
+
+  .item{display:flex;align-items:center;gap:12px;padding:12px 2px;border-bottom:1px solid var(--divider)}
+  .item:last-child{border-bottom:none}
+  .item .info{flex:1 1 auto;min-width:0}
+  .item .nm{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .item .meta{font-size:12px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .item .amt{flex:0 0 auto;font-size:15px;font-weight:600;white-space:nowrap;text-align:right}
+  .item .amt.pos{color:var(--pos)}
+  .item .amt.neg{color:var(--neg)}
+  .item .act{flex:0 0 auto;display:flex;gap:2px}
+  .item .iconbtn{border:none;background:none;color:var(--text3);cursor:pointer;padding:9px;border-radius:var(--r-sm);min-height:40px;min-width:40px;display:flex;align-items:center;justify-content:center;transition:color .15s,background .15s}
+  .item .iconbtn:hover{color:var(--text2);background:var(--surface)}
+  .item.off{opacity:.5}
+
+  /* ---------- Forms ---------- */
+  label{display:block;font-size:13px;color:var(--text2);margin:0 0 7px;font-weight:500}
+  input[type=date],input[type=number],input[type=text],input[type=email],input[type=password],select{
+    width:100%;padding:12px 14px;min-height:46px;border-radius:var(--r-md);border:1px solid var(--border);
+    background:var(--elevated);color:var(--text);font-size:16px;font-family:inherit;
+    transition:border-color .15s,box-shadow .15s;
+  }
+  select{-webkit-appearance:none;appearance:none}
+  input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(15,17,21,.12)}
+  .field{margin-bottom:14px}
+  .row2{display:flex;gap:10px}
+  .row2>.field{flex:1;min-width:0}
+
+  .btn{width:100%;min-height:48px;padding:13px;border:none;border-radius:var(--r-btn);font-size:15px;font-weight:600;background:var(--accent);color:#fff;cursor:pointer;font-family:inherit;transition:background .15s,transform .06s,opacity .15s}
+  .btn:hover{background:var(--accent-hover)}
+  .btn:active{transform:scale(.99)}
+  .btn:disabled{opacity:.55;cursor:default}
+  .btn.ghost{background:var(--elevated);color:var(--text);border:1px solid var(--border)}
+  .btn.ghost:hover{background:var(--surface);border-color:var(--border-strong)}
+  .btn.danger{background:none;color:var(--neg);border:1px solid rgba(255,104,104,.32)}
+  .btn.danger:hover{background:var(--neg-soft)}
+  .btn.sm{width:auto;min-height:40px;padding:9px 15px;font-size:14px}
+
+  .empty{text-align:center;color:var(--text3);padding:28px 10px;font-size:14px}
+  .who{font-size:13px;color:var(--text2);word-break:break-all}
+
+  /* ---------- Modal ---------- */
+  .modal{position:fixed;inset:0;background:rgba(16,20,30,.45);z-index:60;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(2px)}
+  .modal.show{display:flex}
+  .sheet{width:100%;max-width:var(--maxw);background:var(--surface);border:1px solid var(--border);border-bottom:none;border-radius:20px 20px 0 0;max-height:92vh;overflow-y:auto;padding:8px 18px calc(env(safe-area-inset-bottom) + 22px);animation:up .22s ease}
+  @keyframes up{from{transform:translateY(24px);opacity:.7}to{transform:none;opacity:1}}
+  .grab{width:36px;height:4px;border-radius:999px;background:var(--border-strong);margin:8px auto 16px}
+  .sheet h2{margin:0 0 18px;font-size:18px;font-weight:700}
+
+  /* ---------- Auth ---------- */
+  .auth{position:fixed;inset:0;z-index:100;background:var(--bg);display:none;flex-direction:column;justify-content:center;padding:24px;overflow-y:auto}
+  .auth.show{display:flex}
+  .auth-box{width:100%;max-width:380px;margin:0 auto}
+  .auth h1{font-size:24px;font-weight:700;letter-spacing:-.02em;margin:0 0 6px}
+  .auth .tag{color:var(--text2);font-size:14px;margin:0 0 26px}
+  .auth .field{margin-bottom:14px}
+  .auth .aerr{font-size:13px;color:var(--neg);min-height:18px;margin:2px 0 12px;line-height:1.4}
+  .auth .aerr.ok{color:var(--pos)}
+  .auth .swap{text-align:center;margin-top:18px;font-size:14px;color:var(--text2)}
+  .auth .swap button{background:none;border:none;color:var(--accent);font-weight:600;font-family:inherit;font-size:14px;cursor:pointer;padding:4px}
+
+  .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(16px);background:var(--surface);color:var(--text);border:1px solid var(--border-strong);font-weight:500;padding:11px 18px;border-radius:var(--r-md);font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;box-shadow:0 6px 20px -8px rgba(16,20,30,.22);z-index:80}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* ---------- Bottom nav ---------- */
+  nav{position:fixed;bottom:0;left:0;right:0;z-index:40;display:flex;background:rgba(255,255,255,.9);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--divider);padding:6px 0 calc(env(safe-area-inset-bottom) + 6px)}
+  nav button{flex:1;min-height:54px;background:none;border:none;color:var(--text3);font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;transition:color .15s}
+  nav button svg{width:22px;height:22px}
+  nav button:hover{color:var(--text2)}
+  nav button.on{color:var(--accent)}
+</style>
+</head>
+<body>
+
+<!-- ============ INLOGGEN / REGISTREREN ============ -->
+<div class="auth show" id="authScreen">
+  <form class="auth-box" id="authForm" autocomplete="on">
+    <h1>Financiën</h1>
+    <p class="tag" id="authTag">Log in om je overzicht te zien</p>
+    <div class="field">
+      <label for="authEmail">E-mailadres</label>
+      <input type="email" id="authEmail" name="email" autocomplete="username" inputmode="email" placeholder="jij@voorbeeld.nl" required>
+    </div>
+    <div class="field">
+      <label for="authPass">Wachtwoord</label>
+      <input type="password" id="authPass" name="password" autocomplete="current-password" placeholder="••••••••" required>
+    </div>
+    <div class="aerr" id="authErr"></div>
+    <button class="btn" id="authBtn" type="submit">Inloggen</button>
+    <div class="swap" id="authSwap">Nog geen account? <button type="button" id="swapBtn">Account aanmaken</button></div>
+    <div class="swap" id="authForgot" style="margin-top:10px"><button type="button" id="forgotBtn">Wachtwoord vergeten?</button></div>
+  </form>
+
+  <form class="auth-box" id="resetForm" autocomplete="on" style="display:none">
+    <h1>Nieuw wachtwoord</h1>
+    <p class="tag">Kies een nieuw wachtwoord voor je account.</p>
+    <div class="field">
+      <label for="newPass">Nieuw wachtwoord</label>
+      <input type="password" id="newPass" name="password" autocomplete="new-password" placeholder="••••••••" required>
+    </div>
+    <div class="field">
+      <label for="newPass2">Herhaal wachtwoord</label>
+      <input type="password" id="newPass2" name="password2" autocomplete="new-password" placeholder="••••••••" required>
+    </div>
+    <div class="aerr" id="resetErr"></div>
+    <button class="btn" id="resetSaveBtn" type="submit">Wachtwoord opslaan</button>
+  </form>
+</div>
+
+<header>
+  <div class="hwrap"><h1>Financiën</h1></div>
+</header>
+
+<main>
+  <!-- ============ OVERZICHT ============ -->
+  <section class="view active" id="view-home">
+
+    <!-- 1. Netto vermogen -->
+    <div class="widget">
+      <div class="eyebrow">Netto vermogen</div>
+      <div class="nw-amount" id="netNow">€ 0,00</div>
+      <div class="nw-split">
+        <div><div class="k">Bezittingen</div><div class="v" id="assetsNow">€ 0,00</div></div>
+        <div><div class="k">Schuld</div><div class="v neg" id="debtNow">€ 0,00</div></div>
+      </div>
+    </div>
+
+    <!-- 2. Cashflow / prognose -->
+    <div class="widget">
+      <div class="segmented" id="horizonChips" role="group" aria-label="Periode voor prognose">
+        <button data-d="7" aria-pressed="false">1 week</button>
+        <button data-d="14" class="on" aria-pressed="true">2 weken</button>
+        <button data-d="30" aria-pressed="false">4 weken</button>
+        <button data-d="60" aria-pressed="false">8 weken</button>
+        <button data-d="90" aria-pressed="false">12 weken</button>
+      </div>
+      <div class="cf-fore">
+        <div class="eyebrow" id="cfPeriodLabel">Komende 2 weken</div>
+        <div class="cf-amount" id="projAmt">€ 0,00</div>
+        <div class="cf-sub">verwacht saldo</div>
+        <div class="cf-delta up" id="projDelta">—</div>
+        <div class="cf-hint" id="projHint"></div>
+      </div>
+      <div class="chart" id="cfChart"></div>
+      <div class="cf-list" id="eventList"><div class="empty">Nog niets gepland.</div></div>
+    </div>
+
+    <!-- 3. Rekeningen -->
+    <section class="block">
+      <div class="block-head"><h2>Rekeningen</h2></div>
+      <div class="list" id="homeAccounts"><div class="empty">Nog geen rekeningen.</div></div>
+    </section>
+
+    <!-- 4. Doelen -->
+    <section class="block">
+      <div class="block-head"><h2>Doelen</h2><button class="add-btn" id="addGoalBtn">+ Doel</button></div>
+      <div id="goalList"><div class="empty">Nog geen doelen.</div></div>
+    </section>
+  </section>
+
+  <!-- ============ REKENINGEN ============ -->
+  <section class="view" id="view-accounts">
+    <div class="block">
+      <div class="block-head"><h2>Je rekeningen</h2><button class="add-btn" id="addAccBtn">+ Rekening</button></div>
+      <div class="list" id="accountsList"><div class="empty">Nog geen rekeningen toegevoegd.</div></div>
+      <p class="note">Bij een creditcard vul je in wat je nog moet betalen (het openstaande bedrag). Dat wordt van je netto vermogen afgetrokken.</p>
+    </div>
+  </section>
+
+  <!-- ============ GEPLAND ============ -->
+  <section class="view" id="view-planned">
+    <div class="block">
+      <div class="block-head"><h2>Geplande posten</h2><button class="add-btn" id="addPlanBtn">+ Post</button></div>
+      <p class="note" style="margin:0 0 16px">Salaris, huur, abonnementen, incasso's. Deze voeden je prognose.</p>
+      <div class="seg" id="planFilter" role="group" aria-label="Filter posten">
+        <button data-f="all" class="on" aria-pressed="true">Alles</button>
+        <button data-f="income" aria-pressed="false">Inkomsten</button>
+        <button data-f="expense" aria-pressed="false">Uitgaven</button>
+      </div>
+      <div class="list" id="plannedList"><div class="empty">Nog niets gepland.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ MEER ============ -->
+  <section class="view" id="view-settings">
+    <div class="block">
+      <div class="block-head"><h2>Account</h2></div>
+      <div class="who" id="whoami">—</div>
+      <button class="btn ghost" id="logoutBtn" style="margin-top:14px">Uitloggen</button>
+    </div>
+    <div class="block">
+      <div class="block-head"><h2>Back-up</h2></div>
+      <p class="note" style="margin:0 0 16px">Exporteer al je data als .json, of zet een back-up terug.</p>
+      <button class="btn ghost" id="exportBtn" style="margin-bottom:10px">Exporteren (back-up)</button>
+      <button class="btn ghost" id="importBtn">Importeren (.json)</button>
+      <input type="file" id="importFile" accept=".json,application/json" style="display:none">
+    </div>
+    <div class="block">
+      <div class="block-head"><h2>Automatische banksync</h2></div>
+      <p class="note" style="margin:0">Nu vul je saldi zelf in. Later kunnen ABN &amp; Knab automatisch synchroniseren via open banking (PSD2). Trade Republic blijft handmatig.</p>
+    </div>
+  </section>
+</main>
+
+<!-- ============ MODAL (rekening / post / doel) ============ -->
+<div class="modal" id="modal">
+  <div class="sheet">
+    <div class="grab"></div>
+    <h2 id="mTitle">—</h2>
+    <div id="mBody"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<nav>
+  <button data-view="home" class="on" aria-label="Overzicht">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>
+    Overzicht
+  </button>
+  <button data-view="accounts" aria-label="Rekeningen">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+    Rekeningen
+  </button>
+  <button data-view="planned" aria-label="Gepland">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    Gepland
+  </button>
+  <button data-view="settings" aria-label="Meer">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+    Meer
+  </button>
+</nav>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+// ================= State =================
+let accounts = [];   // {id,name,type,balance,sort_order}
+let planned  = [];   // {id,name,amount,kind,freq,anchor,account_id,active}
+let goals    = [];   // {id,name,target,saved}
+let horizon  = 14;   // dagen
+let planFilterVal = 'all';
+
+const ACC_TYPES = {
+  checking:   { label:'Betaalrekening' },
+  savings:    { label:'Spaarrekening'  },
+  credit:     { label:'Creditcard'     },
+  investment: { label:'Beleggingen'    },
+  cash:       { label:'Contant'        }
+};
+const FREQ = { once:'Eenmalig', weekly:'Wekelijks', monthly:'Maandelijks', yearly:'Jaarlijks' };
+
+function load(k,d){ try{ const v=JSON.parse(localStorage.getItem(k)); return v??d; }catch(e){ return d; } }
+
+// ================= Supabase =================
+// Zelfde project & login als je uren-apps, maar EIGEN fin_*-tabellen.
+const SB_URL  = "https://zxlythycfgpqwpquuswg.supabase.co";
+const SB_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4bHl0aHljZmdwcXdwcXV1c3dnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5NTIyOTcsImV4cCI6MjEwMDUyODI5N30.tDSW5jnnB--mltLEpEsmtVgiN6ALixsV3XWxYkJZ014";
+const SESSION_KEY = "fin.session";
+let session = load(SESSION_KEY, null);
+
+function storeSession(s){ session=s; try{ localStorage.setItem(SESSION_KEY, JSON.stringify(s)); }catch(e){} }
+function clearSession(){ session=null; try{ localStorage.removeItem(SESSION_KEY); }catch(e){} }
+const sbConfigured = () => !SB_URL.includes("JOUW-PROJECT") && !SB_ANON.includes("JOUW-ANON");
+
+async function authRequest(grant, payload){
+  const res=await fetch(`${SB_URL}/auth/v1/token?grant_type=${grant}`,{
+    method:"POST", headers:{apikey:SB_ANON,"Content-Type":"application/json"}, body:JSON.stringify(payload)
+  });
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(data.error_description||data.msg||data.error||"Inloggen mislukt");
+  return data;
+}
+function setSessionFromToken(d){
+  storeSession({
+    access_token:d.access_token, refresh_token:d.refresh_token,
+    user_id:(d.user&&d.user.id)||(session&&session.user_id)||null,
+    email:(d.user&&d.user.email)||(session&&session.email)||"",
+    expires_at:Date.now()+((d.expires_in||3600)*1000)
+  });
+}
+async function signIn(email,password){ setSessionFromToken(await authRequest("password",{email,password})); }
+async function signUp(email,password){
+  const res=await fetch(`${SB_URL}/auth/v1/signup`,{
+    method:"POST", headers:{apikey:SB_ANON,"Content-Type":"application/json"}, body:JSON.stringify({email,password})
+  });
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(data.error_description||data.msg||data.error||"Registreren mislukt");
+  if(data.access_token){ setSessionFromToken(data); return true; }
+  return false;
+}
+async function refreshSession(){
+  if(!session||!session.refresh_token) throw new Error("Niet ingelogd");
+  setSessionFromToken(await authRequest("refresh_token",{refresh_token:session.refresh_token}));
+}
+async function ensureToken(){
+  if(!session) throw new Error("Niet ingelogd");
+  if(Date.now() > session.expires_at-60000) await refreshSession();
+}
+async function api(method, path, body, prefer){
+  await ensureToken();
+  const doFetch=()=>{
+    const headers={ apikey:SB_ANON, Authorization:"Bearer "+session.access_token };
+    if(body!==undefined) headers["Content-Type"]="application/json";
+    if(prefer) headers["Prefer"]=prefer; else if(method==="POST") headers["Prefer"]="return=representation";
+    return fetch(SB_URL+"/rest/v1"+path,{ method, headers, body:body!==undefined?JSON.stringify(body):undefined });
+  };
+  let res=await doFetch();
+  if(res.status===401){ await refreshSession(); res=await doFetch(); }
+  if(!res.ok){ const t=await res.text().catch(()=>""); throw new Error("Serverfout ("+res.status+")"+(t?": "+t.slice(0,120):"")); }
+  if(res.status===204) return null;
+  const txt=await res.text(); return txt?JSON.parse(txt):null;
+}
+
+// ---- generieke rij-helpers (uuid-tabellen) ----
+async function createRow(table, obj){
+  const r=await api("POST","/"+table, {...obj, user_id:session.user_id});
+  return r && r[0];
+}
+async function updateRow(table, id, obj){
+  await api("PATCH","/"+table+"?id=eq."+id, {...obj, updated_at:new Date().toISOString()}, "return=minimal");
+}
+async function deleteRow(table, id){
+  await api("DELETE","/"+table+"?id=eq."+id);
+}
+
+async function pullAll(){
+  const [ac, pl, go] = await Promise.all([
+    api("GET","/fin_accounts?select=*&order=sort_order.asc,updated_at.asc"),
+    api("GET","/fin_planned?select=*"),
+    api("GET","/fin_goals?select=*")
+  ]);
+  accounts=(ac||[]).map(a=>({...a, balance:Number(a.balance)||0, sort_order:a.sort_order||0}));
+  planned =(pl||[]).map(p=>({...p, amount:Number(p.amount)||0, active:p.active!==false}));
+  goals   =(go||[]).map(g=>({...g, target:Number(g.target)||0, saved:Number(g.saved)||0}));
+}
+async function persist(fn, okMsg){
+  try{ await fn(); if(okMsg) toast(okMsg); }
+  catch(e){ console.error(e); toast("Opslaan mislukt — check je internet"); }
+}
+
+// ================= Helpers =================
+const eur = n => new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(n||0);
+const num = v => { const n=parseFloat(String(v).replace(/\./g,'').replace(',','.')); return isNaN(n)?0:n; };
+const pad2 = n => String(n).padStart(2,'0');
+function todayISO(){ return isoDate(new Date()); }
+function isoDate(d){ return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()); }
+function parseISO(s){ const [y,m,d]=String(s).split('-').map(Number); return new Date(y,(m||1)-1,d||1); }
+const fmtShort = d => d.toLocaleDateString('nl-NL',{day:'numeric',month:'short'}).replace('.','');
+const monShort = d => d.toLocaleDateString('nl-NL',{month:'short'}).replace('.','');
+
+// ---- rekening-waarden ----
+const isCredit = a => a.type==='credit';
+function accountNet(a){ return isCredit(a) ? -Math.abs(a.balance) : a.balance; }
+function assetsTotal(){ return accounts.filter(a=>!isCredit(a)).reduce((s,a)=>s+a.balance,0); }
+function debtTotal(){ return accounts.filter(isCredit).reduce((s,a)=>s+Math.abs(a.balance),0); }
+function netNow(){ return accounts.reduce((s,a)=>s+accountNet(a),0); }
+
+function accInitials(name){
+  const p=String(name).trim().split(/\s+/).filter(Boolean);
+  if(!p.length) return '–';
+  if(p.length===1) return p[0].slice(0,2).toUpperCase();
+  return (p[0][0]+p[1][0]).toUpperCase();
+}
+
+// ---- occurrences van een geplande post binnen [from,to] ----
+function occurrencesBetween(item, from, to){
+  const out=[]; const a=parseISO(item.anchor);
+  if(item.freq==='once'){ if(a>=from && a<=to) out.push(new Date(a)); return out; }
+  const dom=a.getDate();
+  const clampM=(y,mi)=>new Date(y,mi,Math.min(dom,new Date(y,mi+1,0).getDate()));
+  let d=new Date(a), guard=0;
+  while(d<=to && guard<6000){
+    if(d>=from) out.push(new Date(d));
+    guard++;
+    if(item.freq==='weekly'){ d=new Date(d); d.setDate(d.getDate()+7); }
+    else if(item.freq==='monthly'){ d=clampM(d.getFullYear(), d.getMonth()+1); }
+    else if(item.freq==='yearly'){ d=new Date(d.getFullYear()+1, a.getMonth(), a.getDate()); }
+    else break;
+  }
+  return out;
+}
+
+// ---- alle aankomende gebeurtenissen met meelopend saldo ----
+function upcomingEvents(days){
+  const base=new Date(); base.setHours(0,0,0,0);
+  const from=new Date(base); from.setDate(from.getDate()+1);   // vanaf morgen
+  const to=new Date(base);   to.setDate(to.getDate()+days);
+  const evs=[];
+  planned.filter(p=>p.active).forEach(p=>{
+    occurrencesBetween(p, from, to).forEach(d=>{
+      evs.push({ date:d, name:p.name, kind:p.kind, amount:p.amount });
+    });
+  });
+  evs.sort((a,b)=> a.date-b.date);
+  let bal=netNow();
+  evs.forEach(e=>{ bal += e.kind==='income'? e.amount : -e.amount; e.balance=bal; });
+  return evs;
+}
+function projectedNet(days){
+  const evs=upcomingEvents(days);
+  return evs.length ? evs[evs.length-1].balance : netNow();
+}
+function periodLabel(d){
+  return ({7:'Komende 7 dagen',14:'Komende 2 weken',30:'Komende 4 weken',60:'Komende 8 weken',90:'Komende 12 weken'})[d] || ('Komende '+d+' dagen');
+}
+
+// ================= Navigatie =================
+$$('nav button').forEach(b=>b.onclick=()=>{
+  $$('nav button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  $$('.view').forEach(v=>v.classList.remove('active'));
+  $('#view-'+b.dataset.view).classList.add('active');
+  window.scrollTo({top:0});
+  renderAll();
+});
+function goView(v){ $('nav button[data-view="'+v+'"]').click(); }
+
+// ================= Render =================
+function renderAll(){ renderHome(); renderAccounts(); renderPlanned(); }
+
+function renderHome(){
+  const net=netNow();
+  const nEl=$('#netNow'); nEl.textContent=eur(net); nEl.classList.toggle('neg', net<0);
+  $('#assetsNow').textContent=eur(assetsTotal());
+  const debt=debtTotal();
+  const dbEl=$('#debtNow'); dbEl.textContent=eur(debt); dbEl.classList.toggle('neg', debt>0);
+
+  // prognose
+  const proj=projectedNet(horizon);
+  const delta=proj-net;
+  $('#cfPeriodLabel').textContent=periodLabel(horizon);
+  $('#projAmt').textContent=eur(proj);
+  const dEl=$('#projDelta');
+  dEl.textContent=(delta>=0?'+ ':'− ')+eur(Math.abs(delta))+' netto';
+  dEl.className='cf-delta '+(delta>=0?'up':'down');
+  const evsAll=upcomingEvents(horizon);
+  const inc=evsAll.filter(e=>e.kind==='income').reduce((s,e)=>s+e.amount,0);
+  const exp=evsAll.filter(e=>e.kind==='expense').reduce((s,e)=>s+e.amount,0);
+  $('#projHint').textContent = planned.length ? (eur(inc)+' binnen · '+eur(exp)+' eruit') : 'Voeg geplande posten toe voor een prognose.';
+
+  renderChart(horizon);
+
+  // aankomende posten
+  const evs=evsAll.slice(0,12);
+  const el=$('#eventList');
+  if(!evs.length){ el.innerHTML='<div class="empty">Niks gepland in deze periode.</div>'; }
+  else el.innerHTML = evs.map(e=>{
+    const i=e.kind==='income';
+    return `<div class="tx">
+      <div class="date">${pad2(e.date.getDate())} ${monShort(e.date)}</div>
+      <div class="name">${esc(e.name)}</div>
+      <div class="right">
+        <div class="amt ${i?'pos':'neg'}">${i?'+ ':'− '}${eur(e.amount)}</div>
+        <div class="after">→ ${eur(e.balance)}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // rekeningen (compact)
+  const ha=$('#homeAccounts');
+  if(!accounts.length){ ha.innerHTML='<div class="empty">Nog geen rekeningen.</div>'; }
+  else ha.innerHTML = accounts.map(a=>accRow(a)).join('');
+  bindAccRows(ha);
+
+  renderGoals();
+}
+
+// ---- forecast-grafiek (SVG, stap-lijn met saldosprongen) ----
+function buildSeries(days){
+  const evs=upcomingEvents(days);
+  const base=new Date(); base.setHours(0,0,0,0);
+  const pts=[{x:0, y:netNow(), ev:false}];
+  evs.forEach(e=>{
+    let off=Math.round((e.date-base)/86400000);
+    if(off<0) off=0; if(off>days) off=days;
+    pts.push({x:off, y:e.balance, ev:true});
+  });
+  const last=pts[pts.length-1];
+  if(last.x<days) pts.push({x:days, y:last.y, ev:false});
+  const ys=pts.map(p=>p.y);
+  return {pts, min:Math.min(...ys), max:Math.max(...ys)};
+}
+function renderChart(days){
+  const box=$('#cfChart'); if(!box) return;
+  const W=Math.max(240, Math.round(box.clientWidth||320));
+  const H=120, padX=1, padY=16;
+  const s=buildSeries(days);
+  const range=(s.max-s.min)||1;
+  const X=x=> padX + (x/(days||1))*(W-2*padX);
+  const Y=y=> H - padY - ((y-s.min)/range)*(H-2*padY);
+
+  let d='M '+X(s.pts[0].x).toFixed(1)+' '+Y(s.pts[0].y).toFixed(1);
+  for(let i=1;i<s.pts.length;i++){
+    d+=' L '+X(s.pts[i].x).toFixed(1)+' '+Y(s.pts[i-1].y).toFixed(1);
+    d+=' L '+X(s.pts[i].x).toFixed(1)+' '+Y(s.pts[i].y).toFixed(1);
+  }
+  const startY=s.pts[0].y, endY=s.pts[s.pts.length-1].y;
+  const col = endY>startY ? 'var(--pos)' : (endY<startY ? 'var(--neg)' : 'var(--text3)');
+  const refY=Y(startY).toFixed(1);
+  const dots=s.pts.filter(p=>p.ev).map(p=>
+    `<circle cx="${X(p.x).toFixed(1)}" cy="${Y(p.y).toFixed(1)}" r="3" fill="var(--surface)" stroke="${col}" stroke-width="2"/>`
+  ).join('');
+  box.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none" role="img" aria-label="Verloop van je saldo in deze periode">
+    <line x1="0" y1="${refY}" x2="${W}" y2="${refY}" stroke="var(--divider)" stroke-width="1" stroke-dasharray="3 5"/>
+    <path d="${d}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    ${dots}
+  </svg>`;
+}
+
+function accRow(a){
+  const t=ACC_TYPES[a.type]||{label:a.type};
+  const val = isCredit(a) ? -Math.abs(a.balance) : a.balance;
+  const neg = val<0;
+  return `<div class="acc" data-id="${a.id}" role="button" tabindex="0" aria-label="${escAttr(a.name)}, saldo bijwerken">
+    <div class="acc-ic" aria-hidden="true">${esc(accInitials(a.name))}</div>
+    <div class="info"><div class="nm">${esc(a.name)}</div><div class="ty">${t.label}${isCredit(a)?' · nog te betalen':''}</div></div>
+    <div class="bal ${neg?'neg':''}">${neg?'− ':''}${eur(Math.abs(val))}</div>
+  </div>`;
+}
+function bindAccRows(container){
+  container.querySelectorAll('.acc').forEach(r=>{
+    r.onclick=()=>openAccount(accounts.find(a=>a.id===r.dataset.id));
+    r.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); r.click(); } };
+  });
+}
+
+function renderAccounts(){
+  const el=$('#accountsList');
+  if(!accounts.length){ el.innerHTML='<div class="empty">Nog geen rekeningen toegevoegd.</div>'; return; }
+  el.innerHTML = accounts.map(a=>accRow(a)).join('');
+  bindAccRows(el);
+}
+
+function renderGoals(){
+  const gl=$('#goalList');
+  if(!goals.length){ gl.innerHTML='<div class="empty">Nog geen doelen.</div>'; return; }
+  gl.innerHTML = goals.map(g=>{
+    const pct = g.target>0 ? Math.min(100, Math.round(g.saved/g.target*100)) : 0;
+    return `<div class="goal">
+      <div class="goal-top">
+        <div class="goal-name">${esc(g.name)}</div>
+        <button class="kebab" data-id="${g.id}" aria-label="Opties voor ${escAttr(g.name)}" aria-haspopup="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg>
+        </button>
+      </div>
+      <div class="goal-meta"><span>${eur(g.saved)} van ${eur(g.target)}</span><span class="goal-pct">${pct}%</span></div>
+      <div class="progress"><i style="width:${pct}%"></i></div>
+      <div class="menu" id="gm-${g.id}" role="menu">
+        <button class="menu-item goalEdit" data-id="${g.id}" role="menuitem">Aanpassen</button>
+        <button class="menu-item danger goalDel" data-id="${g.id}" role="menuitem">Verwijderen</button>
+      </div>
+    </div>`;
+  }).join('');
+  gl.querySelectorAll('.kebab').forEach(b=>b.onclick=ev=>{
+    ev.stopPropagation();
+    const m=$('#gm-'+b.dataset.id), open=m.classList.contains('open');
+    closeMenus();
+    if(!open) m.classList.add('open');
+  });
+  gl.querySelectorAll('.goalEdit').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); closeMenus(); openGoal(goals.find(x=>x.id===b.dataset.id)); });
+  gl.querySelectorAll('.goalDel').forEach(b=>b.onclick=ev=>{
+    ev.stopPropagation(); closeMenus();
+    const g=goals.find(x=>x.id===b.dataset.id);
+    goals=goals.filter(x=>x.id!==g.id); renderAll();
+    persist(()=>deleteRow('fin_goals',g.id));
+  });
+}
+function closeMenus(){ $$('.menu.open').forEach(m=>m.classList.remove('open')); }
+document.addEventListener('click', closeMenus);
+
+const IC_EDIT='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+const IC_DEL='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>';
+
+function renderPlanned(){
+  const el=$('#plannedList');
+  let list = planned.slice().sort((a,b)=> parseISO(a.anchor)-parseISO(b.anchor));
+  if(planFilterVal!=='all') list=list.filter(p=>p.kind===planFilterVal);
+  if(!list.length){ el.innerHTML='<div class="empty">Nog niets in deze categorie.</div>'; return; }
+  el.innerHTML = list.map(p=>{
+    const i=p.kind==='income';
+    const acc=accounts.find(a=>a.id===p.account_id);
+    const meta = FREQ[p.freq] + (p.freq==='once'? ' · '+fmtShort(parseISO(p.anchor)) : ' · vanaf '+fmtShort(parseISO(p.anchor))) + (acc?' · '+esc(acc.name):'') + (p.active?'':' · gepauzeerd');
+    return `<div class="item ${p.active?'':'off'}">
+      <div class="info"><div class="nm">${esc(p.name)}</div><div class="meta">${meta}</div></div>
+      <div class="amt ${i?'pos':'neg'}">${i?'+ ':'− '}${eur(p.amount)}</div>
+      <div class="act">
+        <button class="iconbtn edit" data-id="${p.id}" aria-label="Post aanpassen">${IC_EDIT}</button>
+        <button class="iconbtn x" data-id="${p.id}" aria-label="Post verwijderen">${IC_DEL}</button>
+      </div>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('.edit').forEach(b=>b.onclick=()=>openPlan(planned.find(p=>p.id===b.dataset.id)));
+  el.querySelectorAll('.x').forEach(b=>b.onclick=()=>{
+    const p=planned.find(x=>x.id===b.dataset.id);
+    planned=planned.filter(x=>x.id!==p.id); renderAll();
+    persist(()=>deleteRow('fin_planned',p.id));
+  });
+}
+$('#planFilter').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+  $('#planFilter').querySelectorAll('button').forEach(x=>{ x.classList.remove('on'); x.setAttribute('aria-pressed','false'); });
+  b.classList.add('on'); b.setAttribute('aria-pressed','true'); planFilterVal=b.dataset.f; renderPlanned();
+});
+
+// horizon-segmented
+$('#horizonChips').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+  $('#horizonChips').querySelectorAll('button').forEach(x=>{ x.classList.remove('on'); x.setAttribute('aria-pressed','false'); });
+  b.classList.add('on'); b.setAttribute('aria-pressed','true'); horizon=+b.dataset.d; renderHome();
+});
+
+// ================= Modal =================
+function openModal(title, html){ $('#mTitle').textContent=title; $('#mBody').innerHTML=html; $('#modal').classList.add('show'); }
+function closeModal(){ $('#modal').classList.remove('show'); }
+$('#modal').addEventListener('click', e=>{ if(e.target.id==='modal') closeModal(); });
+
+// ---- Rekening toevoegen / bewerken ----
+function openAccount(a){
+  const edit=!!a;
+  const typeOpts = Object.entries(ACC_TYPES).map(([k,v])=>`<option value="${k}" ${a&&a.type===k?'selected':''}>${v.label}</option>`).join('');
+  openModal(edit?'Rekening bijwerken':'Nieuwe rekening', `
+    <div class="field"><label for="fName">Naam</label><input type="text" id="fName" placeholder="Bijv. ABN AMRO" value="${a?escAttr(a.name):''}"></div>
+    <div class="field"><label for="fType">Type</label><select id="fType">${typeOpts}</select></div>
+    <div class="field"><label id="fBalLbl" for="fBal">Saldo (€)</label><input type="text" id="fBal" inputmode="decimal" placeholder="0,00" value="${a?String(a.balance).replace('.',','):''}"></div>
+    <button class="btn" id="fSave">${edit?'Opslaan':'Toevoegen'}</button>
+    ${edit?'<button class="btn danger" id="fDel" style="margin-top:10px">Verwijderen</button>':''}
+  `);
+  const lbl=()=>{ $('#fBalLbl').textContent = $('#fType').value==='credit' ? 'Nog te betalen (€)' : 'Saldo (€)'; };
+  $('#fType').onchange=lbl; lbl();
+  $('#fSave').onclick=()=>{
+    const name=$('#fName').value.trim();
+    if(!name){ toast('Vul een naam in'); return; }
+    const obj={ name, type:$('#fType').value, balance:num($('#fBal').value) };
+    if(edit){
+      Object.assign(a,obj); closeModal(); renderAll();
+      persist(()=>updateRow('fin_accounts',a.id,obj),'Opgeslagen');
+    }else{
+      obj.sort_order=accounts.length;
+      const tmp={...obj, id:'tmp'+Date.now()}; accounts.push(tmp); closeModal(); renderAll();
+      persist(async()=>{ const r=await createRow('fin_accounts',obj); if(r){ tmp.id=r.id; } }, 'Toegevoegd');
+    }
+  };
+  if(edit) $('#fDel').onclick=()=>{
+    accounts=accounts.filter(x=>x.id!==a.id); closeModal(); renderAll();
+    persist(()=>deleteRow('fin_accounts',a.id));
+  };
+}
+$('#addAccBtn').onclick=()=>openAccount(null);
+
+// ---- Geplande post toevoegen / bewerken ----
+function openPlan(p){
+  const edit=!!p;
+  const accOpts = '<option value="">— geen —</option>'+accounts.map(a=>`<option value="${a.id}" ${p&&p.account_id===a.id?'selected':''}>${esc(a.name)}</option>`).join('');
+  const freqOpts = Object.entries(FREQ).map(([k,v])=>`<option value="${k}" ${p&&p.freq===k?'selected':(!p&&k==='monthly'?'selected':'')}>${v}</option>`).join('');
+  openModal(edit?'Post bijwerken':'Nieuwe post', `
+    <div class="seg" id="mKind" role="group" aria-label="Type post">
+      <button data-k="expense" class="${!p||p.kind==='expense'?'on':''}" aria-pressed="${!p||p.kind==='expense'}">Uitgave</button>
+      <button data-k="income" class="${p&&p.kind==='income'?'on':''}" aria-pressed="${!!(p&&p.kind==='income')}">Inkomst</button>
+    </div>
+    <div class="field"><label for="fName">Omschrijving</label><input type="text" id="fName" placeholder="Bijv. Huur / Salaris / Netflix" value="${p?escAttr(p.name):''}"></div>
+    <div class="row2">
+      <div class="field"><label for="fAmt">Bedrag (€)</label><input type="text" id="fAmt" inputmode="decimal" placeholder="0,00" value="${p?String(p.amount).replace('.',','):''}"></div>
+      <div class="field"><label for="fFreq">Herhaling</label><select id="fFreq">${freqOpts}</select></div>
+    </div>
+    <div class="field"><label id="fDateLbl" for="fDate">Eerste datum</label><input type="date" id="fDate" value="${p?p.anchor:todayISO()}"></div>
+    <div class="field"><label for="fAcc">Rekening (optioneel)</label><select id="fAcc">${accOpts}</select></div>
+    <button class="btn" id="fSave">${edit?'Opslaan':'Toevoegen'}</button>
+    ${edit?`<button class="btn ghost" id="fToggle" style="margin-top:10px">${p.active?'Pauzeren':'Activeren'}</button>`:''}
+  `);
+  let kind = p?p.kind:'expense';
+  $('#mKind').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    $('#mKind').querySelectorAll('button').forEach(x=>{ x.classList.remove('on'); x.setAttribute('aria-pressed','false'); });
+    b.classList.add('on'); b.setAttribute('aria-pressed','true'); kind=b.dataset.k;
+  });
+  const dlbl=()=>{ $('#fDateLbl').textContent = $('#fFreq').value==='once' ? 'Datum' : 'Eerste datum'; };
+  $('#fFreq').onchange=dlbl; dlbl();
+  $('#fSave').onclick=()=>{
+    const name=$('#fName').value.trim();
+    const amount=num($('#fAmt').value);
+    if(!name){ toast('Vul een omschrijving in'); return; }
+    if(!amount){ toast('Vul een bedrag in'); return; }
+    const obj={ name, amount, kind, freq:$('#fFreq').value, anchor:$('#fDate').value||todayISO(), account_id:$('#fAcc').value||null };
+    if(edit){
+      Object.assign(p,obj); closeModal(); renderAll();
+      persist(()=>updateRow('fin_planned',p.id,obj),'Opgeslagen');
+    }else{
+      obj.active=true;
+      const tmp={...obj, id:'tmp'+Date.now()}; planned.push(tmp); closeModal(); renderAll();
+      persist(async()=>{ const r=await createRow('fin_planned',obj); if(r){ tmp.id=r.id; } }, 'Toegevoegd');
+    }
+  };
+  if(edit) $('#fToggle').onclick=()=>{
+    p.active=!p.active; closeModal(); renderAll();
+    persist(()=>updateRow('fin_planned',p.id,{active:p.active}));
+  };
+}
+$('#addPlanBtn').onclick=()=>openPlan(null);
+
+// ---- Doel toevoegen / bewerken ----
+function openGoal(g){
+  const edit=!!g;
+  openModal(edit?'Doel bijwerken':'Nieuw doel', `
+    <div class="field"><label for="fName">Naam</label><input type="text" id="fName" placeholder="Bijv. Buffer / Vakantie" value="${g?escAttr(g.name):''}"></div>
+    <div class="row2">
+      <div class="field"><label for="fTarget">Streefbedrag (€)</label><input type="text" id="fTarget" inputmode="decimal" placeholder="0,00" value="${g?String(g.target).replace('.',','):''}"></div>
+      <div class="field"><label for="fSaved">Al gespaard (€)</label><input type="text" id="fSaved" inputmode="decimal" placeholder="0,00" value="${g?String(g.saved).replace('.',','):''}"></div>
+    </div>
+    <button class="btn" id="fSave">${edit?'Opslaan':'Toevoegen'}</button>
+  `);
+  $('#fSave').onclick=()=>{
+    const name=$('#fName').value.trim();
+    if(!name){ toast('Vul een naam in'); return; }
+    const obj={ name, target:num($('#fTarget').value), saved:num($('#fSaved').value) };
+    if(edit){
+      Object.assign(g,obj); closeModal(); renderAll();
+      persist(()=>updateRow('fin_goals',g.id,obj),'Opgeslagen');
+    }else{
+      const tmp={...obj, id:'tmp'+Date.now()}; goals.push(tmp); closeModal(); renderAll();
+      persist(async()=>{ const r=await createRow('fin_goals',obj); if(r){ tmp.id=r.id; } }, 'Toegevoegd');
+    }
+  };
+}
+$('#addGoalBtn').onclick=()=>openGoal(null);
+
+// ================= Back-up =================
+$('#exportBtn').onclick=()=>{
+  const blob=new Blob([JSON.stringify({accounts,planned,goals},null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='financien-backup-'+todayISO()+'.json'; a.click();
+};
+$('#importBtn').onclick=()=>$('#importFile').click();
+$('#importFile').onchange=e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=async ()=>{
+    try{
+      const d=JSON.parse(String(r.result||'{}'));
+      await persist(async()=>{
+        for(const a of (d.accounts||[])){ const {id,user_id,...o}=a; await createRow('fin_accounts',o); }
+        for(const p of (d.planned||[])){ const {id,user_id,...o}=p; await createRow('fin_planned',o); }
+        for(const g of (d.goals||[])){ const {id,user_id,...o}=g; await createRow('fin_goals',o); }
+        await pullAll();
+      }, 'Geïmporteerd');
+      renderAll();
+    }catch(err){ console.error(err); toast('Kon het bestand niet lezen'); }
+    e.target.value='';
+  };
+  r.readAsText(f);
+};
+
+// ================= Helpers (escape) =================
+function esc(s){ return String(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function escAttr(s){ return String(s??'').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+// ================= Account / login =================
+let authMode='login';
+function setAuthMode(m){
+  authMode=m;
+  $('#authTag').textContent = m==='login' ? 'Log in om je overzicht te zien' : 'Maak een account om te starten';
+  $('#authBtn').textContent = m==='login' ? 'Inloggen' : 'Account aanmaken';
+  $('#authPass').setAttribute('autocomplete', m==='login'?'current-password':'new-password');
+  $('#authSwap').innerHTML = m==='login'
+    ? 'Nog geen account? <button type="button" id="swapBtn">Account aanmaken</button>'
+    : 'Al een account? <button type="button" id="swapBtn">Inloggen</button>';
+  $('#authForgot').style.display = m==='login' ? 'block' : 'none';
+  $('#swapBtn').onclick=()=>{ setAuthErr(''); setAuthMode(m==='login'?'signup':'login'); };
+}
+function setAuthErr(msg, ok){ const el=$('#authErr'); el.textContent=msg||''; el.classList.toggle('ok', !!ok); }
+function showAuth(){ $('#authScreen').classList.add('show'); }
+function hideAuth(){ $('#authScreen').classList.remove('show'); }
+
+$('#authForm').addEventListener('submit', async (ev)=>{
+  ev.preventDefault();
+  const email=$('#authEmail').value.trim(), pass=$('#authPass').value;
+  if(!email||!pass){ setAuthErr('Vul je e-mail en wachtwoord in'); return; }
+  if(!sbConfigured()){ setAuthErr('De app is nog niet gekoppeld aan Supabase.'); return; }
+  $('#authBtn').disabled=true; setAuthErr('Bezig…');
+  try{
+    if(authMode==='signup'){
+      const logged=await signUp(email,pass);
+      if(!logged){ setAuthErr('Account aangemaakt! Bevestig via de e-mail en log daarna in.', true); setAuthMode('login'); $('#authBtn').disabled=false; return; }
+    } else {
+      await signIn(email,pass);
+    }
+    setAuthErr('');
+    await afterLogin();
+  }catch(e){ setAuthErr(e.message||'Er ging iets mis'); }
+  $('#authBtn').disabled=false;
+});
+
+async function afterLogin(){
+  await pullAll();
+  hideAuth();
+  $('#whoami').textContent = 'Ingelogd als '+(session.email||'onbekend');
+  renderAll();
+}
+function logout(){
+  clearSession();
+  accounts=[]; planned=[]; goals=[];
+  renderAll();
+  $('#authEmail').value=''; $('#authPass').value='';
+  $('#resetForm').style.display='none'; $('#authForm').style.display='block';
+  setAuthMode('login'); setAuthErr(''); showAuth();
+}
+$('#logoutBtn').onclick=logout;
+
+// ---------- Wachtwoord vergeten / herstel ----------
+let recoveryTokens=null;
+async function requestReset(email){
+  const redirect=location.origin+location.pathname;
+  const res=await fetch(`${SB_URL}/auth/v1/recover?redirect_to=${encodeURIComponent(redirect)}`,{
+    method:"POST", headers:{apikey:SB_ANON,"Content-Type":"application/json"}, body:JSON.stringify({email})
+  });
+  if(!res.ok){ const d=await res.json().catch(()=>({})); throw new Error(d.error_description||d.msg||d.error||"Versturen mislukt"); }
+}
+$('#forgotBtn').onclick=async ()=>{
+  const email=$('#authEmail').value.trim();
+  if(!email){ setAuthErr('Vul eerst je e-mailadres in'); $('#authEmail').focus(); return; }
+  if(!sbConfigured()){ setAuthErr('De app is nog niet gekoppeld aan Supabase.'); return; }
+  $('#forgotBtn').disabled=true; setAuthErr('Bezig…');
+  try{ await requestReset(email); setAuthErr('Gelukt! Check je mail voor de reset-link.', true); }
+  catch(e){ setAuthErr(e.message||'Er ging iets mis'); }
+  $('#forgotBtn').disabled=false;
+};
+function parseHashTokens(){
+  const h=(location.hash||'').replace(/^#/,''); const p=new URLSearchParams(h);
+  return { access_token:p.get('access_token'), refresh_token:p.get('refresh_token'), type:p.get('type'),
+    error:p.get('error'), error_code:p.get('error_code'), err:p.get('error_description') };
+}
+function enterRecoveryMode(tokens){ recoveryTokens=tokens; $('#authForm').style.display='none'; $('#resetForm').style.display='block'; showAuth(); }
+async function updatePassword(newPass){
+  const res=await fetch(`${SB_URL}/auth/v1/user`,{
+    method:"PUT", headers:{ apikey:SB_ANON, Authorization:"Bearer "+recoveryTokens.access_token, "Content-Type":"application/json" },
+    body:JSON.stringify({password:newPass})
+  });
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(data.error_description||data.msg||data.error||"Wachtwoord wijzigen mislukt");
+  return data;
+}
+function setResetErr(m,ok){ const el=$('#resetErr'); el.textContent=m||''; el.classList.toggle('ok',!!ok); }
+$('#resetForm').addEventListener('submit', async (ev)=>{
+  ev.preventDefault();
+  const p1=$('#newPass').value, p2=$('#newPass2').value;
+  if(p1.length<6){ setResetErr('Kies minstens 6 tekens'); return; }
+  if(p1!==p2){ setResetErr('De wachtwoorden komen niet overeen'); return; }
+  $('#resetSaveBtn').disabled=true; setResetErr('Bezig…');
+  try{
+    const user=await updatePassword(p1);
+    storeSession({ access_token:recoveryTokens.access_token, refresh_token:recoveryTokens.refresh_token, user_id:user.id, email:user.email, expires_at:Date.now()+3600*1000 });
+    recoveryTokens=null;
+    $('#newPass').value=''; $('#newPass2').value=''; setResetErr('');
+    $('#resetForm').style.display='none'; $('#authForm').style.display='block';
+    await afterLogin();
+    toast('Nieuw wachtwoord opgeslagen');
+  }catch(e){ setResetErr(e.message||'Er ging iets mis'); }
+  $('#resetSaveBtn').disabled=false;
+});
+
+// ================= Toast =================
+let toastT;
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),1800); }
+
+// ================= Service worker =================
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW niet geregistreerd:', e)); });
+}
+// grafiek opnieuw tekenen bij resize
+let rzT; window.addEventListener('resize', ()=>{ clearTimeout(rzT); rzT=setTimeout(()=>{ if($('#view-home').classList.contains('active')) renderChart(horizon); }, 150); });
+
+// ================= Init =================
+setAuthMode('login');
+(async ()=>{
+  const ht=parseHashTokens();
+  if(ht.error){
+    history.replaceState(null,'',location.pathname+location.search); showAuth();
+    setAuthErr(ht.error_code==='otp_expired'
+      ? 'De reset-link is verlopen of al gebruikt. Vraag hieronder een nieuwe aan.'
+      : (ht.err || 'De link is ongeldig. Vraag hieronder een nieuwe aan.'));
+    return;
+  }
+  if(ht.type==='recovery' && ht.access_token){
+    history.replaceState(null,'',location.pathname+location.search); enterRecoveryMode(ht); return;
+  }
+  if(session && session.access_token && sbConfigured()){
+    try{ await afterLogin(); }
+    catch(e){ console.error(e); clearSession(); showAuth(); }
+  } else { showAuth(); }
+})();
+</script>
+</body>
+</html>
