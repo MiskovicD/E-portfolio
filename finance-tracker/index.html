@@ -346,6 +346,10 @@
       <input type="file" id="importFile" accept=".json,application/json" style="display:none">
     </div>
     <div class="block">
+      <div class="block-head"><h2>Werk-inkomsten</h2></div>
+      <p class="note" style="margin:0">Je aankomende loon wordt automatisch opgehaald uit je uren-apps (DHL/Dragonfly en NYP) en verschijnt als inkomst in je prognose en agenda. Bedragen zijn zoals in die apps: DHL/Dragonfly ex btw, NYP bruto.</p>
+    </div>
+    <div class="block">
       <div class="block-head"><h2>Automatische banksync</h2></div>
       <p class="note" style="margin:0">Nu vul je saldi zelf in. Later kunnen ABN &amp; Knab automatisch synchroniseren via open banking (PSD2). Trade Republic blijft handmatig.</p>
     </div>
@@ -491,6 +495,80 @@ async function persist(fn, okMsg){
   catch(e){ console.error(e); toast("Opslaan mislukt — check je internet"); }
 }
 
+// ============ Werk-inkomsten: gekoppeld aan de uren-apps ============
+// Leest (met dezelfde login/RLS) de tabellen van je DHL/Dragonfly- en NYP-app
+// en berekent je aankomende uitbetalingen met exact dezelfde formules.
+const W_RATE  = { stop:0.62, pkg:0.15, hour:23.50, sundayHour:35 };
+const NYP_RATE = 14.99;
+let workEntries={}, workPaid=new Set(), workPayDelay=5;
+let nypWEntries={}, nypWPaid=new Set(), nypPayoutDay=24;
+
+async function pullWork(){
+  workEntries={}; workPaid=new Set(); workPayDelay=5;
+  nypWEntries={}; nypWPaid=new Set(); nypPayoutDay=24;
+  try{
+    const [rows,pw,us] = await Promise.all([
+      api("GET","/entries?select=date,stops,packages,hours,sunday"),
+      api("GET","/paid_weeks?select=week_key"),
+      api("GET","/user_settings?select=pay_delay&limit=1")
+    ]);
+    (rows||[]).forEach(r=>{ workEntries[r.date]={stops:r.stops||0,packages:r.packages||0,hours:Number(r.hours)||0,sunday:!!r.sunday}; });
+    (pw||[]).forEach(r=>workPaid.add(r.week_key));
+    if(us&&us[0]&&us[0].pay_delay!=null) workPayDelay=us[0].pay_delay;
+  }catch(e){ /* DHL/Dragonfly-app niet ingericht — overslaan */ }
+  try{
+    const [rows,pm,ns] = await Promise.all([
+      api("GET","/nyp_entries?select=date,hours"),
+      api("GET","/nyp_paid_months?select=month_key"),
+      api("GET","/nyp_settings?select=payout_day&limit=1")
+    ]);
+    (rows||[]).forEach(r=>{ nypWEntries[r.date]=(nypWEntries[r.date]||0)+(Number(r.hours)||0); });
+    (pm||[]).forEach(r=>nypWPaid.add(r.month_key));
+    if(ns&&ns[0]&&ns[0].payout_day!=null) nypPayoutDay=ns[0].payout_day;
+  }catch(e){ /* NYP-app niet ingericht — overslaan */ }
+}
+
+function isoWeekLocal(date){
+  const d=new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate()));
+  const day=(d.getUTCDay()+6)%7; d.setUTCDate(d.getUTCDate()-day+3);
+  const firstThu=new Date(Date.UTC(d.getUTCFullYear(),0,4));
+  const fday=(firstThu.getUTCDay()+6)%7; firstThu.setUTCDate(firstThu.getUTCDate()-fday+3);
+  const week=1+Math.round((d-firstThu)/(7*864e5));
+  return { week, year:d.getUTCFullYear() };
+}
+function mondayOf(date){ const d=new Date(date); const day=(d.getDay()+6)%7; d.setDate(d.getDate()-day); d.setHours(0,0,0,0); return d; }
+function weekKeyLocal(date){ const {week,year}=isoWeekLocal(date); return year+'-W'+String(week).padStart(2,'0'); }
+
+// Aankomende (nog niet op 'ontvangen' gezette) uitbetalingen uit beide werk-apps.
+function workPayouts(){
+  const out=[];
+  // DHL/Dragonfly — per ISO-week, uitbetaald vrijdag + payDelay weken (ex btw)
+  const wk={};
+  Object.keys(workEntries).forEach(d=>{
+    const e=workEntries[d], dt=parseISO(d), key=weekKeyLocal(dt);
+    if(!wk[key]) wk[key]={ key, mon:mondayOf(dt), amt:0 };
+    wk[key].amt += (e.stops*W_RATE.stop + e.packages*W_RATE.pkg) + e.hours*(e.sunday?W_RATE.sundayHour:W_RATE.hour);
+  });
+  Object.values(wk).forEach(w=>{
+    if(workPaid.has(w.key) || w.amt<=0) return;
+    const p=new Date(w.mon); p.setDate(p.getDate()+4+workPayDelay*7); p.setHours(0,0,0,0);
+    out.push({ date:p, name:'DHL / Dragonfly', amount:w.amt });
+  });
+  // NYP — per kalendermaand, uitbetaald op payout_day van de VOLGENDE maand (bruto)
+  const mm={};
+  Object.keys(nypWEntries).forEach(d=>{
+    const dt=parseISO(d), key=dt.getFullYear()+'-'+pad2(dt.getMonth()+1);
+    mm[key]=(mm[key]||0)+nypWEntries[d];
+  });
+  Object.keys(mm).forEach(key=>{
+    if(nypWPaid.has(key) || mm[key]<=0) return;
+    const [y,m]=key.split('-').map(Number);
+    const p=new Date(y, m, nypPayoutDay); p.setHours(0,0,0,0); // m (1-based) = maand-index van de volgende maand
+    out.push({ date:p, name:'NYP loon', amount:mm[key]*NYP_RATE });
+  });
+  return out;
+}
+
 // ================= Helpers =================
 const eur = n => new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(n||0);
 const num = v => { const n=parseFloat(String(v).replace(/\./g,'').replace(',','.')); return isNaN(n)?0:n; };
@@ -543,6 +621,10 @@ function upcomingEvents(days){
     occurrencesBetween(p, from, to).forEach(d=>{
       evs.push({ date:d, name:p.name, kind:p.kind, amount:p.amount });
     });
+  });
+  // aankomend loon uit de uren-apps (DHL/Dragonfly + NYP)
+  workPayouts().forEach(w=>{
+    if(w.date>=from && w.date<=to) evs.push({ date:new Date(w.date), name:w.name, kind:'income', amount:w.amount });
   });
   evs.sort((a,b)=> a.date-b.date);
   let bal=netNow();
@@ -1024,6 +1106,7 @@ $('#authForm').addEventListener('submit', async (ev)=>{
 
 async function afterLogin(){
   await pullAll();
+  await pullWork();      // aankomend loon uit de uren-apps (niet-fataal)
   hideAuth();
   $('#whoami').textContent = 'Ingelogd als '+(session.email||'onbekend');
   renderAll();
