@@ -450,6 +450,10 @@
       <p class="note" style="margin:0">Je aankomende loon wordt automatisch opgehaald uit je uren-apps (DHL/Dragonfly en NYP) en verschijnt als inkomst in je prognose en agenda. Bedragen zijn zoals in die apps: DHL/Dragonfly ex btw, NYP bruto.</p>
     </div>
     <div class="block">
+      <div class="block-head"><h2>Versie</h2></div>
+      <p class="note" style="margin:0" id="verLine">—</p>
+    </div>
+    <div class="block">
       <div class="block-head"><h2>Uitgaven &amp; potjes</h2></div>
       <p class="note" style="margin:0">Upload op de Uitgaven-tab screenshots van je bank-app of een CSV-export; alles wordt automatisch bij het juiste potje gezet. Twijfelt de app, dan vraagt hij het één keer en onthoudt daarna je keuze. Deze transacties zijn een overzicht van waar je geld heen gaat — ze veranderen je saldi en prognose niet.</p>
     </div>
@@ -759,7 +763,7 @@ $$('nav button').forEach(b=>b.onclick=()=>{
 function goView(v){ $('nav button[data-view="'+v+'"]').click(); }
 
 // ================= Render =================
-function renderAll(){ renderHome(); renderAccounts(); renderPlanned(); renderExpenses(); }
+function renderAll(){ renderHome(); renderAccounts(); renderPlanned(); renderExpenses(); const v=$('#verLine'); if(v) v.textContent=APP_VERSION; }
 
 function renderHome(){
   const net=netNow();
@@ -1176,6 +1180,7 @@ $('#importFile').onchange=e=>{
 // Screenshots en CSV's van je bank worden gelezen en automatisch bij het
 // juiste potje gezet. Weet de AI het niet zeker, dan vraagt de app het één
 // keer en onthoudt daarna de keuze als regel.
+const APP_VERSION = 'fin-v8 — 25 aug 2026';
 const EXP_FN_URL = SB_URL + "/functions/v1/expenses";
 const SURE = 0.8;                 // vanaf deze zekerheid gaat het automatisch
 

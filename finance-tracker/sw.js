@@ -1,6 +1,8 @@
 // Service worker — maakt de app installeerbaar en werkt offline voor de shell.
-// Supabase-verzoeken worden NOOIT gecachet (altijd verse data).
-const CACHE = 'fin-v7';
+// De pagina zelf wordt NETWERK-EERST geladen, zodat een update meteen aankomt
+// en je niet vastzit aan een oude versie in de cache. Lukt het net niet, dan
+// valt hij terug op de cache. Supabase-verzoeken worden nooit gecachet.
+const CACHE = 'fin-v8';
 const ASSETS = [
   './',
   './index.html',
@@ -22,15 +24,36 @@ self.addEventListener('activate', e => {
   );
 });
 
+// Is dit een verzoek om de pagina zelf?
+function isPage(req, url) {
+  return req.mode === 'navigate' ||
+         url.pathname.endsWith('/') ||
+         url.pathname.endsWith('/index.html');
+}
+
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   // Supabase (auth + data) nooit onderscheppen — altijd live ophalen.
   if (url.hostname.endsWith('supabase.co')) return;
   if (e.request.method !== 'GET') return;
 
+  // De pagina: netwerk eerst, cache als vangnet (offline).
+  if (url.origin === self.location.origin && isPage(e.request, url)) {
+    e.respondWith(
+      fetch(e.request).then(res => {
+        if (res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, copy));
+        }
+        return res;
+      }).catch(() => caches.match(e.request).then(hit => hit || caches.match('./index.html')))
+    );
+    return;
+  }
+
+  // Iconen e.d.: cache eerst, dat scheelt laadtijd.
   e.respondWith(
     caches.match(e.request).then(hit => hit || fetch(e.request).then(res => {
-      // Alleen same-origin GET's bijwerken in de cache.
       if (res.ok && url.origin === self.location.origin) {
         const copy = res.clone();
         caches.open(CACHE).then(c => c.put(e.request, copy));
