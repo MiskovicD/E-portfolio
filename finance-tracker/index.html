@@ -250,6 +250,8 @@
   .imp button svg{width:22px;height:22px}
   .imp button:disabled{opacity:.5;cursor:default}
 
+  .impbox{background:var(--elevated);border:1px solid var(--border);border-radius:var(--r-md);padding:13px 15px;color:var(--text2);font-size:13px;line-height:1.55;margin-top:12px}
+  .impbox b{color:var(--text)}
   .badge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--accent);color:#fff;font-size:11px;font-weight:700;margin-left:7px}
   .tx.q{cursor:pointer}
   .tx .cat{font-size:12px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1274,7 +1276,15 @@ function expErr(e){
   if(/\b401\b|niet ingelogd/i.test(m)) return "Log opnieuw in en probeer nog eens";
   return m.slice(0,90);
 }
-function impStatus(html){ $('#impStatus').innerHTML = html||''; }
+function impStatus(html){
+  const el=$('#impStatus');
+  el.innerHTML = html||'';
+  el.classList.toggle('impbox', !!html);
+  if(html) try{ el.scrollIntoView({block:'nearest', behavior:'smooth'}); }catch(e){}
+}
+function impBusy(on){
+  $('#impShot').disabled=on; $('#impCsv').disabled=on;
+}
 
 // Zet een lijst ruwe transacties weg: dedupliceren -> regels -> AI -> opslaan.
 async function importItems(items, source){
@@ -1300,7 +1310,7 @@ async function importItems(items, source){
 
   // 2. de rest door de AI
   if(todo.length){
-    impStatus('<span class="spin"></span>'+todo.length+' '+(todo.length===1?'transactie':'transacties')+' indelen…');
+    impStatus('<span class="spin"></span><b>Bezig…</b> '+todo.length+' '+(todo.length===1?'transactie':'transacties')+' in een potje zetten');
     try{
       const out=await callExp("sort",{
         items: todo.map(t=>({date:t.date, description:t.description, amount:t.amount, kind:t.kind})),
@@ -1343,7 +1353,7 @@ async function importItems(items, source){
   const parts=[saved+' toegevoegd'];
   if(dup) parts.push(dup+' dubbel overgeslagen');
   if(q) parts.push(q+' om te checken');
-  impStatus(esc(parts.join(' · ')) + (warn ? '<br>'+esc(warn)+' — je vindt ze onder “Even checken”.' : ''));
+  impStatus('<b>Klaar — '+esc(parts.join(' · '))+'</b>' + (warn ? '<br>'+esc(warn)+' — je vindt ze onder “Even checken”.' : ''));
   toast(saved+' '+(saved===1?'transactie':'transacties')+' erbij ✓');
 }
 
@@ -1378,15 +1388,23 @@ async function shrinkImage(file, max){
 async function handleShots(files){
   const list=Array.from(files).slice(0,8);
   if(!list.length) return;
-  impStatus('<span class="spin"></span>'+list.length+' '+(list.length===1?'screenshot':'screenshots')+' lezen…');
+  impBusy(true);
+  toast(list.length===1?'Screenshot lezen…':(list.length+' screenshots lezen…'));
+  impStatus('<span class="spin"></span><b>Bezig…</b> afbeelding klaarmaken');
   try{
     const images=[];
-    for(const f of list) images.push(await shrinkImage(f,1600));
+    for(let i=0;i<list.length;i++){
+      impStatus('<span class="spin"></span><b>Bezig…</b> afbeelding '+(i+1)+' van '+list.length+' klaarmaken');
+      try{ images.push(await shrinkImage(list[i],1600)); }
+      catch(err){ throw new Error('Deze afbeelding kon ik niet openen. iPhone-foto\'s in HEIC-formaat werken niet — maak er een screenshot van, of zet Instellingen → Camera → Formaten op “Meest compatibel”.'); }
+    }
+    impStatus('<span class="spin"></span><b>Bezig…</b> transacties uitlezen (dit duurt ongeveer 10 seconden)');
     const out=await callExp("parse",{ images, today: todayISO() });
     const items=out.transactions||[];
-    if(!items.length){ impStatus('Geen transacties gevonden in deze afbeelding(en).'); return; }
+    if(!items.length){ impStatus('<b>Geen transacties gevonden</b> in deze afbeelding(en). Zorg dat de lijst met bedragen goed leesbaar in beeld staat.'); return; }
     await importItems(items,'screenshot');
-  }catch(e){ console.error(e); impStatus('Lezen mislukt: '+expErr(e)); }
+  }catch(e){ console.error(e); impStatus('<b>Lezen mislukt.</b> '+esc(String(e.message||e).slice(0,160))); }
+  finally{ impBusy(false); }
 }
 
 // ---------- CSV ----------
@@ -1476,12 +1494,16 @@ function mapCsv(rows){
 }
 
 async function handleCsv(file){
-  impStatus('<span class="spin"></span>Bestand lezen…');
+  impBusy(true);
+  toast('Bestand lezen…');
+  impStatus('<span class="spin"></span><b>Bezig…</b> bestand lezen');
   try{
     const text=await file.text();
     const items=mapCsv(splitRows(text));
+    impStatus('<span class="spin"></span><b>Bezig…</b> '+items.length+' regels indelen');
     await importItems(items,'csv');
-  }catch(e){ console.error(e); impStatus('Kon dit bestand niet lezen: '+String(e.message||e).slice(0,80)); }
+  }catch(e){ console.error(e); impStatus('<b>Kon dit bestand niet lezen.</b> '+esc(String(e.message||e).slice(0,120))); }
+  finally{ impBusy(false); }
 }
 
 // ---------- maandcijfers ----------

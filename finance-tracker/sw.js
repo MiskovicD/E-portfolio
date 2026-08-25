@@ -1,6 +1,6 @@
 // Service worker — maakt de app installeerbaar en werkt offline voor de shell.
 // Supabase-verzoeken worden NOOIT gecachet (altijd verse data).
-const CACHE = 'fin-v6';
+const CACHE = 'fin-v7';
 const ASSETS = [
   './',
   './index.html',
