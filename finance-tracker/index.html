@@ -250,6 +250,7 @@
   .imp button svg{width:22px;height:22px}
   .imp button:disabled{opacity:.5;cursor:default}
 
+  .offscreen{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;left:-9999px}
   .impbox{background:var(--elevated);border:1px solid var(--border);border-radius:var(--r-md);padding:13px 15px;color:var(--text2);font-size:13px;line-height:1.55;margin-top:12px}
   .impbox b{color:var(--text)}
   .badge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--accent);color:#fff;font-size:11px;font-weight:700;margin-left:7px}
@@ -390,8 +391,8 @@
           </button>
         </div>
         <div id="impStatus" class="note" style="margin-top:12px"></div>
-        <input type="file" id="shotFile" accept="image/*" multiple style="display:none">
-        <input type="file" id="csvFile" accept=".csv,.txt,text/csv,text/plain" style="display:none">
+        <input type="file" id="shotFile" accept="image/*" multiple class="offscreen">
+        <input type="file" id="csvFile" accept=".csv,.txt,text/csv,text/plain" class="offscreen">
       </div>
 
       <div class="block">
@@ -1180,7 +1181,7 @@ $('#importFile').onchange=e=>{
 // Screenshots en CSV's van je bank worden gelezen en automatisch bij het
 // juiste potje gezet. Weet de AI het niet zeker, dan vraagt de app het één
 // keer en onthoudt daarna de keuze als regel.
-const APP_VERSION = 'fin-v8 — 25 aug 2026';
+const APP_VERSION = 'fin-v9 — 25 aug 2026';
 const EXP_FN_URL = SB_URL + "/functions/v1/expenses";
 const SURE = 0.8;                 // vanaf deze zekerheid gaat het automatisch
 
@@ -1391,8 +1392,8 @@ async function shrinkImage(file, max){
 }
 
 async function handleShots(files){
-  const list=Array.from(files).slice(0,8);
-  if(!list.length) return;
+  const list=Array.from(files||[]).slice(0,8);
+  if(!list.length){ impStatus('<b>Geen afbeelding ontvangen.</b> Probeer het nog eens, of kies een screenshot uit je fotobibliotheek.'); return; }
   impBusy(true);
   toast(list.length===1?'Screenshot lezen…':(list.length+' screenshots lezen…'));
   impStatus('<span class="spin"></span><b>Bezig…</b> afbeelding klaarmaken');
@@ -1732,7 +1733,7 @@ $('#mPrev').onclick=()=>{ monthCur=new Date(monthCur.getFullYear(), monthCur.get
 $('#mNext').onclick=()=>{ monthCur=new Date(monthCur.getFullYear(), monthCur.getMonth()+1, 1); potFilter=null; renderExpenses(); };
 $('#impShot').onclick=()=>$('#shotFile').click();
 $('#impCsv').onclick=()=>$('#csvFile').click();
-$('#shotFile').onchange=async e=>{ const f=e.target.files; e.target.value=''; await handleShots(f); };
+$('#shotFile').onchange=async e=>{ const f=Array.from(e.target.files||[]); e.target.value=''; await handleShots(f); };
 $('#csvFile').onchange=async e=>{ const f=e.target.files[0]; e.target.value=''; if(f) await handleCsv(f); };
 $('#manageCatsBtn').onclick=openCats;
 $('#addTxBtn').onclick=()=>openTx(null);

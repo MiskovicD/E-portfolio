@@ -2,7 +2,7 @@
 // De pagina zelf wordt NETWERK-EERST geladen, zodat een update meteen aankomt
 // en je niet vastzit aan een oude versie in de cache. Lukt het net niet, dan
 // valt hij terug op de cache. Supabase-verzoeken worden nooit gecachet.
-const CACHE = 'fin-v8';
+const CACHE = 'fin-v9';
 const ASSETS = [
   './',
   './index.html',
