@@ -216,6 +216,45 @@
   nav button svg{width:22px;height:22px}
   nav button:hover{color:var(--text2)}
   nav button.on{color:var(--accent)}
+
+  /* ---- Uitgaven & potjes ---- */
+  .mnav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px}
+  .mnav .mlabel{font-size:15px;font-weight:600;letter-spacing:-.01em}
+  .mnav button{border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;width:36px;height:36px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s}
+  .mnav button:hover{background:var(--elevated);color:var(--text)}
+  .mnav button:disabled{opacity:.35;cursor:default}
+  .mnav button svg{width:16px;height:16px}
+
+  .pot{display:block;width:100%;text-align:left;background:none;border:none;font:inherit;color:inherit;padding:14px 8px;margin:0 -8px;border-bottom:1px solid var(--divider);cursor:pointer;border-radius:var(--r-md);transition:background .15s}
+  .pot:last-child{border-bottom:none}
+  .pot:hover{background:var(--surface)}
+  .pot.on{background:var(--elevated)}
+  .pot-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+  .pot-nm{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pot-amt{flex:0 0 auto;font-size:15px;font-weight:600;white-space:nowrap}
+  .pot-sub{font-size:12px;color:var(--text3);margin:7px 0 8px}
+  .pot .progress>i.over{background:var(--neg)}
+
+  .review{background:var(--elevated);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px}
+  .review .r-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+  .review .r-nm{font-size:17px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .review .r-amt{flex:0 0 auto;font-size:17px;font-weight:700}
+  .review .r-meta{font-size:12px;color:var(--text3);margin-top:4px}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:15px}
+  .chip{border:1px solid var(--border-strong);background:var(--surface);color:var(--text);font:inherit;font-size:13px;font-weight:600;padding:9px 13px;border-radius:999px;cursor:pointer;min-height:38px;transition:background .15s,color .15s,border-color .15s}
+  .chip:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+
+  .imp{display:flex;gap:10px;margin-top:2px}
+  .imp button{flex:1;min-height:96px;border:1px dashed var(--border-strong);background:var(--surface);color:var(--text2);border-radius:var(--r-lg);cursor:pointer;font:inherit;font-size:13px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;transition:background .15s,border-color .15s,color .15s}
+  .imp button:hover{background:var(--elevated);border-color:var(--accent);color:var(--text)}
+  .imp button svg{width:22px;height:22px}
+  .imp button:disabled{opacity:.5;cursor:default}
+
+  .badge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--accent);color:#fff;font-size:11px;font-weight:700;margin-left:7px}
+  .tx.q{cursor:pointer}
+  .tx .cat{font-size:12px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .spin{display:inline-block;width:15px;height:15px;border:2px solid var(--border-strong);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-right:8px}
+  @keyframes sp{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -306,6 +345,65 @@
     </section>
   </section>
 
+
+  <!-- ============ UITGAVEN ============ -->
+  <section class="view" id="view-expenses">
+    <div id="expSetup" class="widget" style="display:none">
+      <div class="eyebrow">Nog even instellen</div>
+      <p class="note" style="margin:10px 0 0">Draai <b>supabase-expenses-schema.sql</b> één keer in Supabase → SQL Editor. Daarna verschijnen je potjes hier vanzelf.</p>
+    </div>
+
+    <div id="expMain">
+      <div class="mnav">
+        <button id="mPrev" aria-label="Vorige maand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <div class="mlabel" id="mLabel">—</div>
+        <button id="mNext" aria-label="Volgende maand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+      </div>
+
+      <div class="widget">
+        <div class="eyebrow">Uitgegeven</div>
+        <div class="nw-amount" id="expTotal">€ 0,00</div>
+        <div class="nw-split">
+          <div><div class="k">Budget</div><div class="v" id="expBudget">—</div></div>
+          <div><div class="k">Binnengekomen</div><div class="v" id="expIncome">€ 0,00</div></div>
+        </div>
+      </div>
+
+      <div class="block" id="reviewBlock" style="display:none">
+        <div class="block-head"><h2>Even checken<span class="badge" id="reviewCount">0</span></h2></div>
+        <p class="note" style="margin:0 0 12px">Hier wist ik het niet zeker. Kies één keer een potje — daarna herken ik het zelf.</p>
+        <div id="reviewCard"></div>
+      </div>
+
+      <div class="block">
+        <div class="block-head"><h2>Importeren</h2></div>
+        <div class="imp">
+          <button id="impShot">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            Screenshots
+          </button>
+          <button id="impCsv">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 14h6M9 17h4"/></svg>
+            CSV van je bank
+          </button>
+        </div>
+        <div id="impStatus" class="note" style="margin-top:12px"></div>
+        <input type="file" id="shotFile" accept="image/*" multiple style="display:none">
+        <input type="file" id="csvFile" accept=".csv,.txt,text/csv,text/plain" style="display:none">
+      </div>
+
+      <div class="block">
+        <div class="block-head"><h2>Potjes</h2><button class="add-btn" id="manageCatsBtn">Beheren</button></div>
+        <div class="list" id="potList"><div class="empty">Nog geen uitgaven deze maand.</div></div>
+      </div>
+
+      <div class="block">
+        <div class="block-head"><h2 id="txHead">Transacties</h2><button class="add-btn" id="addTxBtn">+ Handmatig</button></div>
+        <div class="cf-list" id="txList"><div class="empty">Nog niets deze maand.</div></div>
+      </div>
+    </div>
+  </section>
+
   <!-- ============ REKENINGEN ============ -->
   <section class="view" id="view-accounts">
     <div class="block">
@@ -350,6 +448,10 @@
       <p class="note" style="margin:0">Je aankomende loon wordt automatisch opgehaald uit je uren-apps (DHL/Dragonfly en NYP) en verschijnt als inkomst in je prognose en agenda. Bedragen zijn zoals in die apps: DHL/Dragonfly ex btw, NYP bruto.</p>
     </div>
     <div class="block">
+      <div class="block-head"><h2>Uitgaven &amp; potjes</h2></div>
+      <p class="note" style="margin:0">Upload op de Uitgaven-tab screenshots van je bank-app of een CSV-export; alles wordt automatisch bij het juiste potje gezet. Twijfelt de app, dan vraagt hij het één keer en onthoudt daarna je keuze. Deze transacties zijn een overzicht van waar je geld heen gaat — ze veranderen je saldi en prognose niet.</p>
+    </div>
+    <div class="block">
       <div class="block-head"><h2>Automatische banksync</h2></div>
       <p class="note" style="margin:0">Nu vul je saldi zelf in. Later kunnen ABN &amp; Knab automatisch synchroniseren via open banking (PSD2). Trade Republic blijft handmatig.</p>
     </div>
@@ -371,6 +473,10 @@
   <button data-view="home" class="on" aria-label="Overzicht">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>
     Overzicht
+  </button>
+  <button data-view="expenses" aria-label="Uitgaven">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h13a3 3 0 0 1 3 3v1"/><path d="M21 11v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h9"/><circle cx="17" cy="14" r="1.3"/></svg>
+    Uitgaven
   </button>
   <button data-view="accounts" aria-label="Rekeningen">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
@@ -651,7 +757,7 @@ $$('nav button').forEach(b=>b.onclick=()=>{
 function goView(v){ $('nav button[data-view="'+v+'"]').click(); }
 
 // ================= Render =================
-function renderAll(){ renderHome(); renderAccounts(); renderPlanned(); }
+function renderAll(){ renderHome(); renderAccounts(); renderPlanned(); renderExpenses(); }
 
 function renderHome(){
   const net=netNow();
@@ -1064,6 +1170,546 @@ $('#importFile').onchange=e=>{
   r.readAsText(f);
 };
 
+// ================= Uitgaven & potjes =================
+// Screenshots en CSV's van je bank worden gelezen en automatisch bij het
+// juiste potje gezet. Weet de AI het niet zeker, dan vraagt de app het één
+// keer en onthoudt daarna de keuze als regel.
+const EXP_FN_URL = SB_URL + "/functions/v1/expenses";
+const SURE = 0.8;                 // vanaf deze zekerheid gaat het automatisch
+
+let categories = [];   // {id,name,budget,kind,sort_order}
+let txs        = [];   // {id,date,description,merchant,amount,kind,category_id,confidence,needs_review,hash,source}
+let rules      = [];   // {id,pattern,category_id,kind,hits}
+let expReady   = false;
+let monthCur   = firstOfMonth(new Date());
+let potFilter  = null; // id van het potje waarop de transactielijst gefilterd is
+
+const DEFAULT_CATS = [
+  'Boodschappen','Vaste lasten','Vervoer','Uit eten & bezorgen','Abonnementen',
+  'Kleding & spullen','Zorg & verzekering','Vrije tijd','Overboeking & sparen','Overig'
+];
+
+function firstOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
+function monthKey(d){ return d.getFullYear()+'-'+pad2(d.getMonth()+1); }
+function monthLabel(d){ const s=d.toLocaleDateString('nl-NL',{month:'long',year:'numeric'}); return s.charAt(0).toUpperCase()+s.slice(1); }
+function catById(id){ return categories.find(c=>c.id===id) || null; }
+function normTxt(s){ return String(s||'').toLowerCase().replace(/\s+/g,' ').trim(); }
+function titleCase(s){ return String(s||'').replace(/\b[a-z]/g,c=>c.toUpperCase()); }
+
+async function pullExpenses(){
+  try{
+    const [ca,tx,ru] = await Promise.all([
+      api("GET","/fin_categories?select=*&order=sort_order.asc,name.asc"),
+      api("GET","/fin_tx?select=*&order=date.desc&limit=2000"),
+      api("GET","/fin_rules?select=*")
+    ]);
+    categories=(ca||[]).map(c=>({...c, budget:Number(c.budget)||0, sort_order:c.sort_order||0}));
+    txs       =(tx||[]).map(t=>({...t, amount:Number(t.amount)||0, confidence:Number(t.confidence)||0}));
+    rules     =(ru||[]).map(r=>({...r, pattern:normTxt(r.pattern), hits:r.hits||1}));
+    expReady=true;
+    if(!categories.length) await seedCategories();
+  }catch(e){
+    expReady=false; categories=[]; txs=[]; rules=[];   // tabellen nog niet aangemaakt
+  }
+}
+
+async function seedCategories(){
+  try{
+    const rows = DEFAULT_CATS.map((name,i)=>({ user_id:session.user_id, name, budget:0, kind:'expense', sort_order:i }));
+    rows.push({ user_id:session.user_id, name:'Inkomsten', budget:0, kind:'income', sort_order:99 });
+    const made = await api("POST","/fin_categories", rows);
+    categories = (made||[]).map(c=>({...c, budget:Number(c.budget)||0, sort_order:c.sort_order||0}));
+  }catch(e){ console.error(e); }
+}
+
+// ---------- regels (winkel -> potje) ----------
+function matchRule(desc){
+  const d=normTxt(desc);
+  if(!d) return null;
+  let best=null;
+  for(const r of rules){
+    if(r.pattern && r.pattern.length>=3 && d.includes(r.pattern)){
+      if(!best || r.pattern.length>best.pattern.length) best=r;
+    }
+  }
+  return best;
+}
+function ruleKey(merchant, description){
+  const m=normTxt(merchant);
+  if(m.length>=3) return m.slice(0,40);
+  return normTxt(description).replace(/[0-9]{3,}/g,' ').replace(/\s+/g,' ').trim().slice(0,24);
+}
+async function learnRule(pattern, category_id, kind){
+  const p=normTxt(pattern);
+  if(!p || p.length<3 || !category_id) return;
+  const local=rules.find(r=>r.pattern===p);
+  if(local){ local.category_id=category_id; local.hits=(local.hits||1)+1; }
+  else rules.push({ pattern:p, category_id, kind:kind||'expense', hits:1 });
+  try{
+    await api("POST","/fin_rules?on_conflict=user_id,pattern",
+      { user_id:session.user_id, pattern:p, category_id, kind:kind||'expense', hits:1, updated_at:new Date().toISOString() },
+      "resolution=merge-duplicates,return=minimal");
+  }catch(e){ console.error(e); }
+}
+
+// ---------- import-pijplijn ----------
+function txHash(t){ return [t.date, Math.round(t.amount*100), normTxt(t.description).slice(0,40)].join('|'); }
+
+async function callExp(action, payload){
+  await ensureToken();
+  const res=await fetch(EXP_FN_URL,{
+    method:"POST",
+    headers:{ "Content-Type":"application/json", apikey:SB_ANON, Authorization:"Bearer "+session.access_token },
+    body: JSON.stringify({ action, ...(payload||{}) })
+  });
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(data.error || ("Serverfout "+res.status));
+  return data;
+}
+function expErr(e){
+  const m=String((e&&e.message)||e||"");
+  if(/Failed to fetch|NetworkError/i.test(m)) return "Geen verbinding met de lees-server";
+  if(/\b404\b|Function not found/i.test(m)) return "Lees-functie nog niet geïnstalleerd in Supabase";
+  if(/ANTHROPIC_API_KEY/i.test(m)) return "API-key ontbreekt in Supabase (function-secret)";
+  if(/\b401\b|niet ingelogd/i.test(m)) return "Log opnieuw in en probeer nog eens";
+  return m.slice(0,90);
+}
+function impStatus(html){ $('#impStatus').innerHTML = html||''; }
+
+// Zet een lijst ruwe transacties weg: dedupliceren -> regels -> AI -> opslaan.
+async function importItems(items, source){
+  const seen=new Set(txs.map(t=>t.hash).filter(Boolean));
+  const fresh=[];
+  let dup=0, warn='';
+  for(const it of items){
+    const t={ date:it.date, description:String(it.description||'').slice(0,200), amount:Math.abs(Number(it.amount)||0), kind:it.kind==='income'?'income':'expense' };
+    if(!t.date || !t.amount){ continue; }
+    t.hash=txHash(t);
+    if(seen.has(t.hash)){ dup++; continue; }
+    seen.add(t.hash); fresh.push(t);
+  }
+  if(!fresh.length){ impStatus(dup? (dup+' regels stonden er al in.') : 'Niets bruikbaars gevonden.'); return; }
+
+  // 1. eerder geleerde regels
+  const todo=[];
+  for(const t of fresh){
+    const r=matchRule(t.description);
+    if(r){ t.category_id=r.category_id; t.confidence=1; t.needs_review=false; t.merchant=titleCase(r.pattern); }
+    else todo.push(t);
+  }
+
+  // 2. de rest door de AI
+  if(todo.length){
+    impStatus('<span class="spin"></span>'+todo.length+' '+(todo.length===1?'transactie':'transacties')+' indelen…');
+    try{
+      const out=await callExp("sort",{
+        items: todo.map(t=>({date:t.date, description:t.description, amount:t.amount, kind:t.kind})),
+        categories: categories.map(c=>({id:c.id, name:c.name, kind:c.kind})),
+        examples: rules.slice(0,120).map(r=>({pattern:r.pattern, category:(catById(r.category_id)||{}).name})).filter(e=>e.category)
+      });
+      const byIdx=new Map((out.results||[]).map(r=>[r.index,r]));
+      todo.forEach((t,i)=>{
+        const r=byIdx.get(i);
+        if(r && r.category_id && r.confidence>=SURE){
+          t.category_id=r.category_id; t.confidence=r.confidence; t.needs_review=false;
+          t.merchant=r.merchant||''; t._pattern=r.pattern||'';
+        }else{
+          t.category_id=(r&&r.category_id)||null; t.confidence=(r&&r.confidence)||0;
+          t.needs_review=true; t.merchant=(r&&r.merchant)||'';
+        }
+      });
+    }catch(e){
+      todo.forEach(t=>{ t.category_id=null; t.confidence=0; t.needs_review=true; t.merchant=''; });
+      warn='automatisch indelen lukte niet ('+expErr(e)+')';
+    }
+  }
+
+  // 3. opslaan
+  const rows=fresh.map(t=>({
+    user_id:session.user_id, date:t.date, description:t.description, merchant:t.merchant||'',
+    amount:t.amount, kind:t.kind, category_id:t.category_id||null, source,
+    confidence:t.confidence||0, needs_review:!!t.needs_review, hash:t.hash
+  }));
+  const saved=await insertTx(rows);
+
+  // 4. zekere AI-keuzes worden meteen een regel, zodat het de volgende keer gratis gaat
+  for(const t of fresh){
+    if(t._pattern && t.category_id && !t.needs_review) await learnRule(t._pattern, t.category_id, t.kind);
+  }
+
+  await pullExpenses();
+  renderExpenses();
+  const q=txs.filter(t=>t.needs_review).length;
+  const parts=[saved+' toegevoegd'];
+  if(dup) parts.push(dup+' dubbel overgeslagen');
+  if(q) parts.push(q+' om te checken');
+  impStatus(esc(parts.join(' · ')) + (warn ? '<br>'+esc(warn)+' — je vindt ze onder “Even checken”.' : ''));
+  toast(saved+' '+(saved===1?'transactie':'transacties')+' erbij ✓');
+}
+
+async function insertTx(rows){
+  let ok=0;
+  for(let i=0;i<rows.length;i+=50){
+    const chunk=rows.slice(i,i+50);
+    try{ await api("POST","/fin_tx", chunk, "return=minimal"); ok+=chunk.length; }
+    catch(e){
+      for(const r of chunk){ try{ await api("POST","/fin_tx", r, "return=minimal"); ok++; }catch(_){} }
+    }
+  }
+  return ok;
+}
+
+// ---------- screenshots ----------
+async function shrinkImage(file, max){
+  const buf=await file.arrayBuffer();
+  const blob=new Blob([buf],{type:file.type||'image/jpeg'});
+  const url=URL.createObjectURL(blob);
+  try{
+    const img=await new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=url; });
+    const scale=Math.min(1, max/Math.max(img.width,img.height));
+    const w=Math.max(1,Math.round(img.width*scale)), h=Math.max(1,Math.round(img.height*scale));
+    const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+    cv.getContext('2d').drawImage(img,0,0,w,h);
+    const dataUrl=cv.toDataURL('image/jpeg',0.85);
+    return { media_type:'image/jpeg', data:dataUrl.split(',')[1] };
+  }finally{ URL.revokeObjectURL(url); }
+}
+
+async function handleShots(files){
+  const list=Array.from(files).slice(0,8);
+  if(!list.length) return;
+  impStatus('<span class="spin"></span>'+list.length+' '+(list.length===1?'screenshot':'screenshots')+' lezen…');
+  try{
+    const images=[];
+    for(const f of list) images.push(await shrinkImage(f,1600));
+    const out=await callExp("parse",{ images, today: todayISO() });
+    const items=out.transactions||[];
+    if(!items.length){ impStatus('Geen transacties gevonden in deze afbeelding(en).'); return; }
+    await importItems(items,'screenshot');
+  }catch(e){ console.error(e); impStatus('Lezen mislukt: '+expErr(e)); }
+}
+
+// ---------- CSV ----------
+function splitRows(text){
+  const rows=[]; let row=[], cell='', q=false;
+  const delim=pickDelim(text);
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){
+      if(c==='"'){ if(text[i+1]==='"'){ cell+='"'; i++; } else q=false; }
+      else cell+=c;
+    }else if(c==='"'){ q=true; }
+    else if(c===delim){ row.push(cell); cell=''; }
+    else if(c==='\n'){ row.push(cell); cell=''; if(row.some(x=>x.trim()!=='')) rows.push(row); row=[]; }
+    else if(c!=='\r'){ cell+=c; }
+  }
+  row.push(cell);
+  if(row.some(x=>x.trim()!=='')) rows.push(row);
+  return rows.map(r=>r.map(c=>c.trim().replace(/^"|"$/g,'')));
+}
+function pickDelim(text){
+  const head=text.split('\n').slice(0,5).join('\n');
+  const counts={ ';':(head.match(/;/g)||[]).length, ',':(head.match(/,/g)||[]).length, '\t':(head.match(/\t/g)||[]).length };
+  return Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0] || ',';
+}
+function csvAmount(s){
+  let v=String(s||'').replace(/[€\s]/g,'').replace(/[A-Za-z]/g,'');
+  let neg=/^-/.test(v) || /-$/.test(v);
+  v=v.replace(/[+-]/g,'');
+  if(v.includes(',') && v.includes('.')) v = v.lastIndexOf(',')>v.lastIndexOf('.') ? v.replace(/\./g,'').replace(',','.') : v.replace(/,/g,'');
+  else if(v.includes(',')) v=v.replace(/\./g,'').replace(',','.');
+  const n=parseFloat(v);
+  if(isNaN(n)) return null;
+  return neg ? -Math.abs(n) : n;
+}
+function csvDate(s){
+  const v=String(s||'').trim();
+  let m;
+  if((m=v.match(/^(\d{4})(\d{2})(\d{2})$/)))            return m[1]+'-'+m[2]+'-'+m[3];
+  if((m=v.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/))) return m[1]+'-'+pad2(m[2])+'-'+pad2(m[3]);
+  if((m=v.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/))) return m[3]+'-'+pad2(m[2])+'-'+pad2(m[1]);
+  return null;
+}
+const DATE_H = ['datum','date','transactiedatum','boekingsdatum','rentedatum','transaction date','datum boeking'];
+const AMT_H  = ['bedrag','amount','bedrag (eur)','transactiebedrag','bedrag eur','af bij bedrag','amount (eur)','bedrag (€)'];
+const DESC_H = ['naam / omschrijving','naam tegenpartij','omschrijving','omschrijving-1','description','mededelingen','naam','tegenrekening naam','merchant','beschrijving','details','naam / bedrijf'];
+const SIGN_H = ['af bij','af/bij','debet/credit','debit/credit','type','bij/af'];
+
+function mapCsv(rows){
+  if(!rows.length) throw new Error('Leeg bestand');
+  const head=rows[0].map(h=>normTxt(h));
+  const idxOf=(names)=>{ for(const n of names){ const i=head.indexOf(n); if(i>=0) return i; } 
+    for(let i=0;i<head.length;i++){ if(names.some(n=>head[i].includes(n))) return i; } return -1; };
+  const di=idxOf(DATE_H), ai=idxOf(AMT_H);
+
+  let out=[];
+  if(di>=0 && ai>=0){
+    const si=idxOf(SIGN_H);
+    const dIdxs=DESC_H.map(n=>head.indexOf(n)).filter(i=>i>=0);
+    for(const r of rows.slice(1)){
+      const date=csvDate(r[di]); const amt=csvAmount(r[ai]);
+      if(!date || amt===null) continue;
+      let desc=dIdxs.map(i=>r[i]).filter(Boolean).join(' — ').slice(0,200);
+      if(!desc) desc=r.filter((c,i)=>i!==di && i!==ai && /[a-z]{3}/i.test(c)).join(' ').slice(0,200);
+      let sign=amt;
+      if(si>=0){ const s=normTxt(r[si]); if(s.startsWith('af')||s.startsWith('d')) sign=-Math.abs(amt); else if(s.startsWith('bij')||s.startsWith('c')) sign=Math.abs(amt); }
+      out.push({ date, description:desc||'Onbekend', raw:sign });
+    }
+  }else{
+    // ABN AMRO exporteert zonder kopregel: rekening, munt, transactiedatum(JJJJMMDD), ...
+    for(const r of rows){
+      if(r.length<7) continue;
+      const date=csvDate(r[2]); const amt=csvAmount(r[6]);
+      if(!date || amt===null) continue;
+      out.push({ date, description:(r[7]||r[8]||'Onbekend').slice(0,200), raw:amt });
+    }
+  }
+  if(!out.length) throw new Error('Geen datum/bedrag-kolom herkend');
+
+  // Richting: staan er plus- én minbedragen, dan is min = uitgave.
+  const hasNeg=out.some(o=>o.raw<0), hasPos=out.some(o=>o.raw>0);
+  return out.map(o=>({
+    date:o.date, description:o.description, amount:Math.abs(o.raw),
+    // Alleen plusbedragen (typisch een creditcard-overzicht): alles is een uitgave.
+    kind: (hasNeg&&hasPos) ? (o.raw<0?'expense':'income') : 'expense'
+  }));
+}
+
+async function handleCsv(file){
+  impStatus('<span class="spin"></span>Bestand lezen…');
+  try{
+    const text=await file.text();
+    const items=mapCsv(splitRows(text));
+    await importItems(items,'csv');
+  }catch(e){ console.error(e); impStatus('Kon dit bestand niet lezen: '+String(e.message||e).slice(0,80)); }
+}
+
+// ---------- maandcijfers ----------
+function txOfMonth(d){
+  const k=monthKey(d);
+  return txs.filter(t=>String(t.date).slice(0,7)===k);
+}
+function spentPerCat(list){
+  const m={};
+  list.filter(t=>t.kind==='expense').forEach(t=>{ const k=t.category_id||'_'; m[k]=(m[k]||0)+t.amount; });
+  return m;
+}
+
+// ---------- render ----------
+function renderExpenses(){
+  $('#expSetup').style.display = expReady ? 'none' : 'block';
+  $('#expMain').style.display  = expReady ? 'block' : 'none';
+  if(!expReady) return;
+
+  $('#mLabel').textContent = monthLabel(monthCur);
+  $('#mNext').disabled = monthCur >= firstOfMonth(new Date());
+
+  const list=txOfMonth(monthCur);
+  const spent=list.filter(t=>t.kind==='expense').reduce((s,t)=>s+t.amount,0);
+  const income=list.filter(t=>t.kind==='income').reduce((s,t)=>s+t.amount,0);
+  const budget=categories.filter(c=>c.kind!=='income').reduce((s,c)=>s+c.budget,0);
+  $('#expTotal').textContent=eur(spent);
+  $('#expIncome').textContent=eur(income);
+  const bEl=$('#expBudget');
+  bEl.textContent = budget ? eur(budget) : '—';
+  bEl.classList.toggle('neg', !!budget && spent>budget);
+
+  renderReview();
+  renderPots(list, spentPerCat(list));
+  renderTxList(list);
+}
+
+function renderReview(){
+  const q=txs.filter(t=>t.needs_review);
+  $('#reviewBlock').style.display = q.length ? 'block' : 'none';
+  if(!q.length) return;
+  $('#reviewCount').textContent=q.length;
+  const t=q[0];
+  const cats=categories.filter(c=> t.kind==='income' ? true : c.kind!=='income');
+  $('#reviewCard').innerHTML=`
+    <div class="review">
+      <div class="r-top">
+        <div class="r-nm">${esc(t.merchant || t.description || 'Onbekend')}</div>
+        <div class="r-amt ${t.kind==='income'?'pos':''}">${t.kind==='income'?'+':'−'} ${esc(eur(t.amount).replace('€','€ '))}</div>
+      </div>
+      <div class="r-meta">${esc(fmtShort(parseISO(t.date)))}${t.merchant && t.description ? ' · '+esc(t.description.slice(0,60)) : ''}</div>
+      <div class="chips">
+        ${cats.map(c=>`<button class="chip" data-cat="${escAttr(c.id)}">${esc(c.name)}</button>`).join('')}
+      </div>
+    </div>`;
+  $('#reviewCard').querySelectorAll('.chip').forEach(b=>{
+    b.onclick=()=>resolveReview(t, b.dataset.cat);
+  });
+}
+
+async function resolveReview(t, category_id){
+  t.category_id=category_id; t.needs_review=false; t.confidence=1;
+  renderExpenses();
+  await persist(async()=>{
+    await updateRow('fin_tx', t.id, { category_id, needs_review:false, confidence:1 });
+    await learnRule(ruleKey(t.merchant, t.description), category_id, t.kind);
+  });
+}
+
+function renderPots(list, per){
+  const el=$('#potList');
+  const cats=categories.slice().sort((a,b)=>(per[b.id]||0)-(per[a.id]||0));
+  const rows=[];
+  for(const c of cats){
+    const amt=per[c.id]||0;
+    if(!amt && !c.budget) continue;
+    const pct=c.budget ? Math.min(100, Math.round(amt/c.budget*100)) : 0;
+    const over=c.budget && amt>c.budget;
+    rows.push(`<button class="pot ${potFilter===c.id?'on':''}" data-cat="${escAttr(c.id)}">
+      <div class="pot-top"><div class="pot-nm">${esc(c.name)}</div><div class="pot-amt ${over?'neg':''}">${esc(eur(amt))}</div></div>
+      ${c.budget ? `<div class="pot-sub">${esc(eur(Math.max(0,c.budget-amt)))} over van ${esc(eur(c.budget))}</div>
+        <div class="progress"><i class="${over?'over':''}" style="width:${pct}%"></i></div>` : ''}
+    </button>`);
+  }
+  const un=per['_']||0;
+  if(un) rows.push(`<button class="pot ${potFilter==='_'?'on':''}" data-cat="_">
+      <div class="pot-top"><div class="pot-nm">Zonder potje</div><div class="pot-amt">${esc(eur(un))}</div></div>
+    </button>`);
+  el.innerHTML = rows.length ? rows.join('') : '<div class="empty">Nog geen uitgaven deze maand.</div>';
+  el.querySelectorAll('.pot').forEach(b=>b.onclick=()=>{
+    potFilter = potFilter===b.dataset.cat ? null : b.dataset.cat;
+    renderExpenses();
+  });
+}
+
+function renderTxList(list){
+  let rows=list.slice().sort((a,b)=> a.date<b.date?1:a.date>b.date?-1:0);
+  if(potFilter) rows=rows.filter(t=> (t.category_id||'_')===potFilter);
+  const c=potFilter && potFilter!=='_' ? catById(potFilter) : null;
+  $('#txHead').textContent = potFilter ? (c?c.name:'Zonder potje') : 'Transacties';
+  const el=$('#txList');
+  el.innerHTML = rows.length ? rows.map(t=>{
+    const cat=catById(t.category_id);
+    return `<div class="tx q" data-id="${escAttr(t.id)}">
+      <div class="date">${esc(fmtShort(parseISO(t.date)))}</div>
+      <div class="name">${esc(t.merchant || t.description || 'Onbekend')}
+        <div class="cat">${esc(cat?cat.name:'geen potje')}${t.needs_review?' · te checken':''}</div>
+      </div>
+      <div class="right"><div class="amt ${t.kind==='income'?'pos':''}">${t.kind==='income'?'+':'−'} ${esc(eur(t.amount).replace('€','€ '))}</div></div>
+    </div>`;
+  }).join('') : '<div class="empty">Nog niets deze maand.</div>';
+  el.querySelectorAll('.tx').forEach(r=>r.onclick=()=>{
+    const t=txs.find(x=>x.id===r.dataset.id); if(t) openTx(t);
+  });
+}
+
+// ---------- transactie bewerken ----------
+function openTx(t){
+  const isNew=!t;
+  t = t || { date:todayISO(), description:'', merchant:'', amount:0, kind:'expense', category_id:null };
+  openModal(isNew?'Nieuwe transactie':'Transactie', `
+    <div class="row2">
+      <div class="field"><label for="tDate">Datum</label><input type="date" id="tDate" value="${escAttr(t.date)}"></div>
+      <div class="field"><label for="tAmt">Bedrag</label><input type="number" id="tAmt" inputmode="decimal" step="0.01" min="0" value="${t.amount||''}"></div>
+    </div>
+    <div class="field"><label for="tName">Omschrijving</label><input type="text" id="tName" value="${escAttr(t.merchant||t.description||'')}" placeholder="Albert Heijn"></div>
+    <div class="row2">
+      <div class="field"><label for="tKind">Soort</label><select id="tKind">
+        <option value="expense" ${t.kind!=='income'?'selected':''}>Uitgave</option>
+        <option value="income" ${t.kind==='income'?'selected':''}>Inkomst</option>
+      </select></div>
+      <div class="field"><label for="tCat">Potje</label><select id="tCat">
+        <option value="">— geen —</option>
+        ${categories.map(c=>`<option value="${escAttr(c.id)}" ${t.category_id===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}
+      </select></div>
+    </div>
+    <button class="btn" id="tSave">Opslaan</button>
+    ${isNew?'':'<button class="btn danger" id="tDel" style="margin-top:10px">Verwijderen</button>'}
+  `);
+  $('#tSave').onclick=async()=>{
+    const obj={
+      date:$('#tDate').value||todayISO(),
+      amount:Math.abs(Number($('#tAmt').value)||0),
+      merchant:$('#tName').value.trim(),
+      description:t.description||$('#tName').value.trim(),
+      kind:$('#tKind').value,
+      category_id:$('#tCat').value||null,
+      needs_review:false, confidence:1
+    };
+    if(!obj.amount){ toast('Vul een bedrag in'); return; }
+    closeModal();
+    if(isNew){
+      obj.source='manual'; obj.hash=txHash(obj)+'|'+Math.random().toString(36).slice(2,7);
+      await persist(async()=>{ await createRow('fin_tx',obj); await pullExpenses(); }, 'Toegevoegd');
+    }else{
+      Object.assign(t,obj);
+      await persist(async()=>{
+        await updateRow('fin_tx', t.id, obj);
+        if(obj.category_id) await learnRule(ruleKey(obj.merchant, obj.description), obj.category_id, obj.kind);
+      }, 'Opgeslagen');
+    }
+    renderExpenses();
+  };
+  if(!isNew) $('#tDel').onclick=async()=>{
+    closeModal();
+    txs=txs.filter(x=>x.id!==t.id); renderExpenses();
+    await persist(()=>deleteRow('fin_tx',t.id), 'Verwijderd');
+  };
+}
+
+// ---------- potjes beheren ----------
+function openCats(){
+  openModal('Potjes', `
+    <p class="note" style="margin:0 0 14px">Vul een maandbudget in om te zien hoeveel je nog over hebt. 0 = geen budget.</p>
+    <div id="catRows"></div>
+    <button class="btn ghost" id="catAdd" style="margin-top:14px">+ Nieuw potje</button>
+  `);
+  const draw=()=>{
+    $('#catRows').innerHTML = categories.map(c=>`
+      <div class="item">
+        <div class="info"><div class="nm">${esc(c.name)}</div><div class="meta">${c.kind==='income'?'inkomsten':'uitgaven'}</div></div>
+        <div class="amt"><input type="number" inputmode="decimal" step="1" min="0" data-budget="${escAttr(c.id)}" value="${c.budget||''}" placeholder="0" style="width:92px;text-align:right"></div>
+        <div class="act"><button class="iconbtn" data-del="${escAttr(c.id)}" aria-label="Verwijderen">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13"/></svg>
+        </button></div>
+      </div>`).join('');
+    $('#catRows').querySelectorAll('[data-budget]').forEach(inp=>{
+      inp.onchange=async()=>{
+        const c=catById(inp.dataset.budget); if(!c) return;
+        c.budget=Math.abs(Number(inp.value)||0);
+        await persist(()=>updateRow('fin_categories', c.id, { budget:c.budget }));
+        renderExpenses();
+      };
+    });
+    $('#catRows').querySelectorAll('[data-del]').forEach(b=>{
+      b.onclick=async()=>{
+        const c=catById(b.dataset.del); if(!c) return;
+        if(!confirm('“'+c.name+'” verwijderen? Transacties in dit potje blijven staan, maar zonder potje.')) return;
+        categories=categories.filter(x=>x.id!==c.id);
+        txs.forEach(t=>{ if(t.category_id===c.id) t.category_id=null; });
+        rules=rules.filter(r=>r.category_id!==c.id);
+        draw(); renderExpenses();
+        await persist(()=>deleteRow('fin_categories', c.id), 'Verwijderd');
+      };
+    });
+  };
+  draw();
+  $('#catAdd').onclick=async()=>{
+    const name=prompt('Naam van het nieuwe potje:');
+    if(!name || !name.trim()) return;
+    await persist(async()=>{
+      const made=await createRow('fin_categories',{ name:name.trim(), budget:0, kind:'expense', sort_order:categories.length });
+      if(made) categories.push({...made, budget:0});
+      draw(); renderExpenses();
+    }, 'Potje toegevoegd');
+  };
+}
+
+// ---------- knoppen ----------
+$('#mPrev').onclick=()=>{ monthCur=new Date(monthCur.getFullYear(), monthCur.getMonth()-1, 1); potFilter=null; renderExpenses(); };
+$('#mNext').onclick=()=>{ monthCur=new Date(monthCur.getFullYear(), monthCur.getMonth()+1, 1); potFilter=null; renderExpenses(); };
+$('#impShot').onclick=()=>$('#shotFile').click();
+$('#impCsv').onclick=()=>$('#csvFile').click();
+$('#shotFile').onchange=async e=>{ const f=e.target.files; e.target.value=''; await handleShots(f); };
+$('#csvFile').onchange=async e=>{ const f=e.target.files[0]; e.target.value=''; if(f) await handleCsv(f); };
+$('#manageCatsBtn').onclick=openCats;
+$('#addTxBtn').onclick=()=>openTx(null);
+
 // ================= Helpers (escape) =================
 function esc(s){ return String(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 function escAttr(s){ return String(s??'').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
@@ -1107,6 +1753,7 @@ $('#authForm').addEventListener('submit', async (ev)=>{
 async function afterLogin(){
   await pullAll();
   await pullWork();      // aankomend loon uit de uren-apps (niet-fataal)
+  await pullExpenses();  // potjes, transacties en geleerde regels (niet-fataal)
   hideAuth();
   $('#whoami').textContent = 'Ingelogd als '+(session.email||'onbekend');
   renderAll();
@@ -1115,6 +1762,7 @@ async function afterLogin(){
 function logout(){
   clearSession();
   accounts=[]; planned=[]; goals=[];
+  categories=[]; txs=[]; rules=[]; expReady=false; potFilter=null;
   renderAll();
   $('#authEmail').value=''; $('#authPass').value='';
   $('#resetForm').style.display='none'; $('#authForm').style.display='block';
