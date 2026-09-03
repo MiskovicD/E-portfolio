@@ -1,0 +1,49 @@
+# ── Geheimen ────────────────────────────────────────────────
+# NOOIT committen. Geen uitzondering, ook niet voor .env.example:
+# dat bestandstype is ontworpen om gedeeld te worden en is daarmee precies
+# de plek waar een echte sleutel ongemerkt insluipt.
+.env
+.env.*
+*.env
+*.pem
+*.key
+*.p12
+*.keystore
+credentials*.json
+client_secret*.json
+service-account*.json
+*secret*
+*token*.json
+.netrc
+
+# ── Dependencies / build ────────────────────────────────────
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+dist/
+build/
+.cache/
+.next/
+.shopify/
+.shopify.lock
+public/build/
+extensions/*/dist/
+
+# ── Databases / lokale data ─────────────────────────────────
+*.sqlite
+*.sqlite-journal
+*.db
+prisma/dev.sqlite*
+
+# ── Tooling / OS-rommel ─────────────────────────────────────
+.claude/
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
+
+# ── Grote bestanden ─────────────────────────────────────────
+*.zip
